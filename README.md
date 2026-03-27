@@ -78,10 +78,14 @@ rg.generate_html_report(
 - `report.py` module for performance visualization.
 - Institutional-grade HTML report generation with dark mode.
 - Automated equity curve plotting using `matplotlib`.
+
+## [1.0.0] - 2026-03-27
+
+### Added
+
+- `orchestrator.py` module for full-pipeline automation.
+- Robust error handling for multi-ticker trading workflows.
+- Unified entry point for end-to-end strategy execution.
+- Consolidated reporting integration in the orchestrator.
+- Final production-ready stabilizing of all core modules.
 - Standalone report exports with embedded assets.
-  esting engine and performance metrics.
-- `portfolio/`: Portfolio management and PnL tracking.
-- `execution/`: Paper trading engine and trade logging.
-- `risk/`: Risk management and position sizing.
-- `agents/`: Multi-agent orchestration layer.
-- `reporting/`: Performance reporting.
