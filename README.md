@@ -54,15 +54,32 @@ ta = TradingAgent()
 data = ra.research(["AAPL"], "2024-01-01", "2024-03-01")
 signals = sa.get_recommendations(data)
 ta.trade(signals)
-print(ta.get_status({"AAPL": 180}))
+
+from reporting.report import ReportGenerator
+rg = ReportGenerator()
+rg.generate_html_report(
+    {"Return": "15%"},
+    pd.read_csv("execution/trade_log.csv"),
+    pd.Series([100, 115])
+)
 ```
 
 ## Project Structure
 
 - `data/`: Data fetching and caching.
 - `features/`: Technical indicator engineering.
-- `strategies/`: Trading strategies and signal generation.
-- `backtesting/`: Vectorized backtesting engine and performance metrics.
+- `strategies/`: Trading- `StrategyAgent` for signal generation and validation.
+- `TradingAgent` for risk-aware portfolio execution.
+
+## [0.9.0] - 2026-03-27
+
+### Added
+
+- `report.py` module for performance visualization.
+- Institutional-grade HTML report generation with dark mode.
+- Automated equity curve plotting using `matplotlib`.
+- Standalone report exports with embedded assets.
+  esting engine and performance metrics.
 - `portfolio/`: Portfolio management and PnL tracking.
 - `execution/`: Paper trading engine and trade logging.
 - `risk/`: Risk management and position sizing.
