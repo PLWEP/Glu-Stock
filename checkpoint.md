@@ -168,6 +168,7 @@ The Telegram Integration Module provides real-time monitoring and control of the
 
 - **Bot Commands:** `/status` (health), `/portfolio` (detailed performance), `/report [daily|weekly|monthly]` (periodic summaries).
 - **Alert Triggers:** Real-time `BUY` icons, errors, and automated end-of-session reports.
+- **Diagnostics:** Strict debug logging in `send_message` and standalone `--test` connectivity mode.
 - **Provider:** Integrated bot listener and proactive orchestrator alerts.
 - **Data Source:** Direct consumption of `TradingDatabase` and `TextReportGenerator`.
 - **Status:** Production-ready.

@@ -289,5 +289,13 @@ To enable the Telegram bot:
 - Strict telemetry logging in `PipelineOrchestrator` (Scanned, Candidates, Executed).
 - Forced reporting protocol ensuring daily reports are sent regardless of activity levels.
 - Robust fallback and error handling for Telegram report generation.
+
+## [1.20.0] - 2026-03-27
+
+### Added
+
+- Strict debug logging in `telegram_bot.py` for API interaction traceability.
+- Standalone connectivity test mode (`python telegram_bot.py --test`).
+- Full error reporting for failed Telegram messaging attempts.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

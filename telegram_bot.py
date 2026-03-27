@@ -25,16 +25,32 @@ class TelegramBot:
         self.offset = 0
 
     def send_message(self, text: str):
-        """ Sends a message to the configured chat_id. """
+        """ Sends a message to the configured chat_id with strict debug logging. """
         if not self.tel_config.get("enabled"):
             return
         
         url = f"{self.api_url}/sendMessage"
         payload = {"chat_id": self.chat_id, "text": text, "parse_mode": "Markdown"}
+        
+        print(f"Telegram: Sending message to Telegram...")
         try:
-            requests.post(url, json=payload, timeout=10)
+            response = requests.post(url, json=payload, timeout=10)
+            if response.status_code == 200:
+                print("Telegram: Message sent successfully")
+            else:
+                print(f"Telegram: Failed with status {response.status_code}")
+                print(f"Telegram: Response: {response.text}")
+                self.logger.error("Telegram: API Error", status=response.status_code, body=response.text)
         except Exception as e:
+            print(f"Telegram: CRITICAL ERROR: {str(e)}")
+            import traceback
+            traceback.print_exc()
             self.logger.error("Telegram: Failed to send message", error=str(e))
+
+    def test_telegram(self):
+        """ Standalone connectivity test. """
+        print("Telegram: Running connectivity test...")
+        self.send_message("✅ *TELEGRAM TEST SUCCESS*\nSystem: Glu-Stock Engine")
 
     def handle_status(self):
         """ Handles /status command. """
@@ -111,5 +127,9 @@ class TelegramBot:
                 time.sleep(5)
 
 if __name__ == "__main__":
+    import sys
     bot = TelegramBot()
-    bot.poll()
+    if "--test" in sys.argv:
+        bot.test_telegram()
+    else:
+        bot.poll()
