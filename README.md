@@ -240,5 +240,14 @@ To enable the Telegram bot:
 - Automated error notifications hooked into `JsonLogger`.
 - Daily session summary reports sent via Telegram upon pipeline completion.
 - Centralized `utils/alerts.py` utility for one-off notifications.
+
+## [1.14.0] - 2026-03-27
+
+### Changed
+
+- Upgraded `data/database.py` with granular trade and portfolio tracking.
+- Implemented `trades` table with entry/exit, qty, pnl, status, strategy, and timeframe.
+- Implemented `portfolio_snapshots` table with `positions_value` support.
+- Added institutional-grade trade lifecycle functions: `insert_trade`, `update_trade_close`.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

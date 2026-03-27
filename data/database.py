@@ -1,12 +1,12 @@
 import sqlite3
 import os
 from datetime import datetime
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class TradingDatabase:
     """
-    Handles SQLite persistence for trades and portfolio history.
-    Ensures thread-safe (or at least centralized) access to the trading database.
+    Handles SQLite persistence for trades and portfolio snapshots.
+    Compatible with Termux and standard Python environments.
     """
 
     def __init__(self, db_path: str = "data/trading.db"):
@@ -19,62 +19,73 @@ class TradingDatabase:
         return sqlite3.connect(self.db_path)
 
     def _create_tables(self):
-        """ Initializes the database schema. """
+        """ Initializes the database schema with the requested tables. """
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
-            # 1. Trades table
+            
+            # 1. Trades table (extended lifecycle tracking)
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS trades (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TEXT NOT NULL,
                     ticker TEXT NOT NULL,
-                    side TEXT NOT NULL,
-                    quantity REAL NOT NULL,
-                    price REAL NOT NULL,
-                    total_value REAL NOT NULL
+                    entry_price REAL NOT NULL,
+                    exit_price REAL,
+                    qty INTEGER NOT NULL,
+                    entry_date TEXT NOT NULL,
+                    exit_date TEXT,
+                    pnl REAL DEFAULT 0.0,
+                    status TEXT DEFAULT 'OPEN',
+                    strategy TEXT,
+                    timeframe TEXT
                 )
             """)
-            # 2. Portfolio history table
+            
+            # 2. Portfolio snapshots table
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS portfolio_history (
+                CREATE TABLE IF NOT EXISTS portfolio_snapshots (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    timestamp TEXT NOT NULL,
+                    date TEXT NOT NULL,
                     equity REAL NOT NULL,
-                    cash REAL NOT NULL
+                    cash REAL NOT NULL,
+                    positions_value REAL NOT NULL
                 )
             """)
+            
             conn.commit()
         finally:
             conn.close()
 
-    def record_trade(self, ticker: str, side: str, quantity: float, price: float):
-        """ Persists a trade record to the database. """
-        timestamp = datetime.now().isoformat()
-        total_value = quantity * price
+    # --- Trade Functions ---
+
+    def insert_trade(self, ticker: str, entry_price: float, qty: int, strategy: str = "Default", timeframe: str = "daily") -> int:
+        """ Creates a new OPEN trade record. Returns the trade ID. """
+        entry_date = datetime.now().isoformat()
         
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO trades (timestamp, ticker, side, quantity, price, total_value)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (timestamp, ticker, side, quantity, price, total_value))
+                INSERT INTO trades (ticker, entry_price, qty, entry_date, status, strategy, timeframe)
+                VALUES (?, ?, ?, ?, 'OPEN', ?, ?)
+            """, (ticker, entry_price, qty, entry_date, strategy, timeframe))
             conn.commit()
+            return cursor.lastrowid
         finally:
             conn.close()
 
-    def record_portfolio_snapshot(self, equity: float, cash: float):
-        """ Persists a portfolio snapshot to the database. """
-        timestamp = datetime.now().isoformat()
+    def update_trade_close(self, trade_id: int, exit_price: float, pnl: float):
+        """ Closes an existing trade record with exit data. """
+        exit_date = datetime.now().isoformat()
         
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
             cursor.execute("""
-                INSERT INTO portfolio_history (timestamp, equity, cash)
-                VALUES (?, ?, ?)
-            """, (timestamp, equity, cash))
+                UPDATE trades 
+                SET exit_price = ?, exit_date = ?, pnl = ?, status = 'CLOSED'
+                WHERE id = ?
+            """, (exit_price, exit_date, pnl, trade_id))
             conn.commit()
         finally:
             conn.close()
@@ -85,8 +96,25 @@ class TradingDatabase:
         try:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM trades ORDER BY timestamp DESC")
+            cursor.execute("SELECT * FROM trades ORDER BY entry_date DESC")
             return [dict(row) for row in cursor.fetchall()]
+        finally:
+            conn.close()
+
+    # --- Portfolio Functions ---
+
+    def insert_portfolio_snapshot(self, equity: float, cash: float, positions_value: float):
+        """ Persists a granular portfolio snapshot. """
+        date = datetime.now().isoformat()
+        
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO portfolio_snapshots (date, equity, cash, positions_value)
+                VALUES (?, ?, ?, ?)
+            """, (date, equity, cash, positions_value))
+            conn.commit()
         finally:
             conn.close()
 
@@ -96,15 +124,30 @@ class TradingDatabase:
         try:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            cursor.execute("SELECT * FROM portfolio_history ORDER BY timestamp DESC")
+            cursor.execute("SELECT * FROM portfolio_snapshots ORDER BY date DESC")
             return [dict(row) for row in cursor.fetchall()]
         finally:
             conn.close()
 
+    # --- Backward Compatibility Mappings ---
+    # These helpers maintain functionality for existing modules during transition.
+
+    def record_trade(self, ticker: str, side: str, quantity: float, price: float):
+        """ Legacy wrapper for record_trade. Maps to insert_trade for BUY. """
+        if side == "BUY":
+            self.insert_trade(ticker, price, int(quantity))
+        # Note: SELL would need trade_id lookup, handled by the new TradingAgent logic.
+
+    def record_portfolio_snapshot(self, equity: float, cash: float):
+        """ Legacy wrapper for record_portfolio_snapshot. """
+        self.insert_portfolio_snapshot(equity, cash, equity - cash)
+
 if __name__ == "__main__":
     # Test initialization
-    db = TradingDatabase(db_path="data/test_trading.db")
-    db.record_trade("BBCA.JK", "BUY", 100, 10000)
-    db.record_portfolio_snapshot(100000000, 99000000)
-    print(db.get_all_trades())
-    print(db.get_portfolio_history())
+    db = TradingDatabase(db_path="data/test_v2.db")
+    tid = db.insert_trade("BBCA.JK", 10000, 100)
+    db.update_trade_close(tid, 10500, 50000)
+    db.insert_portfolio_snapshot(100050000, 99000000, 1050000)
+    
+    print("Trades:", db.get_all_trades())
+    print("Portfolio:", db.get_portfolio_history())

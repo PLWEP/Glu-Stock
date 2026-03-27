@@ -99,8 +99,10 @@ The Scheduler Module automates the execution of the trading pipeline.
 The Persistence Module manages long-term storage of trading data using SQLite.
 
 - **Database:** `data/trading.db`.
-- **Tables:** `trades` for execution history, `portfolio_history` for equity tracking.
-- **Resilience:** Explicit connection management for Windows compatibility.
+- **Tables:**
+    - `trades`: tracks id, ticker, entry/exit prices, qty, dates, pnl, status (OPEN/CLOSED), strategy, and timeframe.
+    - `portfolio_snapshots`: tracks date, equity, cash, and positions_value.
+- **Resilience:** Explicit connection management for Windows and Termux compatibility.
 - **Status:** Production-ready.
 
 ## Module Logic: Universe Selection Module
