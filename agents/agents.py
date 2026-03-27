@@ -8,6 +8,7 @@ from portfolio.portfolio import Portfolio
 from execution.execution import ExecutionEngine
 from risk.risk import RiskManager
 from data.universe import UniverseManager
+from utils.logger import JsonLogger
 
 class ResearchAgent:
     """ Handles data collection and feature engineering. """
@@ -48,6 +49,7 @@ class UniverseSelectionAgent:
     def __init__(self, research_agent: Optional[ResearchAgent] = None):
         self.research_agent = research_agent or ResearchAgent()
         self.universe_manager = UniverseManager()
+        self.logger = JsonLogger(log_file="logs/universe_selection.log")
 
     def select_universe(self, max_stocks: int, start_date: str, end_date: str) -> List[str]:
         """
@@ -79,10 +81,17 @@ class UniverseSelectionAgent:
                 continue
 
         # 5. Execute Multi-Factor Ranking
-        top_tickers = self.universe_manager.rank_stocks(
+        top_tickers, all_scores = self.universe_manager.rank_stocks(
             filtered_metadata, 
             price_data_dict, 
             top_n=max_stocks
+        )
+        
+        # 6. Structured Logging
+        self.logger.info(
+            "UniverseSelectionAgent: Curated watchlist generated",
+            selected=top_tickers,
+            scores=all_scores
         )
         
         print(f"UniverseSelectionAgent: Selected {top_tickers}")

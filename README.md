@@ -181,5 +181,14 @@ pm2 start ecosystem.config.js
 - One-shot entry point `main.py` for scheduled execution.
 - Automated weekday 09:00 AM cron orchestration.
 - Memory limiting (500MB) and resource guarding.
+
+## [1.9.0] - 2026-03-27
+
+### Added
+
+- Enhanced score logging in `agents/agents.py`.
+- Audit trail for multi-factor ranking in `logs/universe_selection.log`.
+- Structured JSON output of candidate scores (Volume, Volatility, Trend).
+- Detailed selection reporting for daily session transparency.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import os
-from typing import List, Dict
+from typing import List, Dict, Tuple, Any
 
 class UniverseManager:
     """
@@ -40,12 +40,10 @@ class UniverseManager:
         ]
         return filtered
 
-    def rank_stocks(self, df: pd.DataFrame, price_data_dict: Dict[str, pd.DataFrame], top_n: int = 10) -> List[str]:
+    def rank_stocks(self, df: pd.DataFrame, price_data_dict: Dict[str, pd.DataFrame], top_n: int = 10) -> Tuple[List[str], Dict[str, Any]]:
         """
-        Ranks stocks using a multi-factor ensemble:
-        - Volume (40%): Avg 20d Volume.
-        - Volatility (30%): Std Dev of 20d returns.
-        - Trend (30%): Distance from SMA20.
+        Ranks stocks using a multi-factor ensemble.
+        Returns Tuple: (List[Top Tickers], Dict[Ticker -> All Scores])
         """
         tickers = df["ticker"].tolist()
         scores = []
@@ -100,8 +98,13 @@ class UniverseManager:
         )
 
         # Sort and return top N
-        top_stocks = scores_df.sort_values("final_score", ascending=False).head(top_n)
-        return top_stocks["ticker"].tolist()
+        sorted_scores = scores_df.sort_values("final_score", ascending=False)
+        top_stocks = sorted_scores.head(top_n)["ticker"].tolist()
+        
+        # Format scores for logging
+        full_scores = sorted_scores.set_index("ticker")["final_score"].to_dict()
+        
+        return top_stocks, full_scores
 
 if __name__ == "__main__":
     # Test Manager
