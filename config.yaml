@@ -1,0 +1,9 @@
+trading:
+    capital: 100000000 # 100M IDR
+    risk_per_trade: 0.02 # 2%
+    tickers:
+        - BBCA.JK
+        - TLKM.JK
+        - ASII.JK
+        - BMRI.JK
+        - GOTO.JK

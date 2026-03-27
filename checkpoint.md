@@ -56,6 +56,24 @@ The Feature Module computes technical indicators while ensuring zero lookahead b
 - **Data Integrity:** Group-by-ticker processing to prevent data leakage.
 - **Status:** Production-ready.
 
+## Module Logic: Orchestrator Module
+
+The Orchestrator provides a high-level entry point for multi-ticker trading workflows.
+
+- **Pipeline:** Coordinates Research -> Strategy -> Trading -> Reporting.
+- **Resilience:** Per-ticker isolation and error handling.
+- **Reporting:** Automatic generation of consolidated performance dashboards.
+- **Status:** Production-ready.
+
+## Module Logic: Configuration Module
+
+The Configuration Module manages externalized trading parameters using YAML.
+
+- **File:** `config.yaml` for capital, risk, and IDX tickers.
+- **Loader:** `ConfigLoader` handles parsing, validation, and defaults.
+- **Safety:** Enforces positive capital and valid risk percentage (0-1).
+- **Status:** Production-ready.
+
 ## Module Logic: Agents Module
 
 The Agents Module provides an orchestration layer using a multi-agent system.

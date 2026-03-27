@@ -55,21 +55,29 @@ data = ra.research(["AAPL"], "2024-01-01", "2024-03-01")
 signals = sa.get_recommendations(data)
 ta.trade(signals)
 
-from reporting.report import ReportGenerator
-rg = ReportGenerator()
-rg.generate_html_report(
-    {"Return": "15%"},
-    pd.read_csv("execution/trade_log.csv"),
-    pd.Series([100, 115])
-)
+from orchestrator.orchestrator import Orchestrator
+orch = Orchestrator()
+summary = orch.run_full_pipeline(["AAPL", "TSLA"], "2024-01-01", "2024-03-01")
+print(f"Workflow Summary: {summary['tickers_processed']}")
+
+from utils.config import ConfigLoader
+config = ConfigLoader().get_trading_params()
+print(f"Trading with {config['capital']} capital on {config['tickers']}")
 ```
 
 ## Project Structure
 
 - `data/`: Data fetching and caching.
 - `features/`: Technical indicator engineering.
-- `strategies/`: Trading- `StrategyAgent` for signal generation and validation.
-- `TradingAgent` for risk-aware portfolio execution.
+- `strategies/`: Trading strategies and signal generation.
+- `backtesting/`: Vectorized backtesting engine and performance metrics.
+- `portfolio/`: Portfolio management and PnL tracking.
+- `execution/`: Paper trading engine and trade logging.
+- `risk/`: Risk management and position sizing.
+- `agents/`: Multi-agent orchestration layer.
+- `orchestrator/`: Full-pipeline orchestration and resilience.
+- `reporting/`: Performance reporting.
+- `utils/`: Miscellaneous utilities (Configuration, etc.).
 
 ## [0.9.0] - 2026-03-27
 
@@ -88,4 +96,13 @@ rg.generate_html_report(
 - Unified entry point for end-to-end strategy execution.
 - Consolidated reporting integration in the orchestrator.
 - Final production-ready stabilizing of all core modules.
+
+## [1.1.0] - 2026-03-27
+
+### Added
+
+- Centralized `config.yaml` for trading parameters (IDX focused).
+- `ConfigLoader` utility with robust validation and defaults.
+- Support for externalized capital and risk management.
+- Comprehensive unit tests for the configuration system.
 - Standalone report exports with embedded assets.
