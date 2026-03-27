@@ -356,5 +356,14 @@ To enable the Telegram bot:
 - Added conditional logic in `TradingStrategy` to bypass scoring thresholds when `DEBUG_MODE` is active.
 - Added adaptive universe selection in `PipelineOrchestrator` to force Top-3 selection in debug mode.
 - Injected high-fidelity debug telemetry to track signal overrides at runtime.
+
+## [1.28.0] - 2026-03-27
+
+### Enhanced
+
+- Upgraded `TextReportGenerator` with a sophisticated zero-trade fallback mechanism.
+- Integrated "Top Candidates" telemetry into idle reports to maintain market visibility.
+- Updated `PipelineOrchestrator` to feed competitive scan data into the reporting pipeline.
+- Enforced strict 2-decimal rounding for candidate scores in Telegram notifications.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

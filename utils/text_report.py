@@ -13,7 +13,7 @@ class TextReportGenerator:
     def __init__(self):
         self.db = TradingDatabase()
 
-    def generate_report(self, days: int, interval_name: str) -> str:
+    def generate_report(self, days: int, interval_name: str, candidates: List[Dict[str, Any]] = None) -> str:
         """
         Generic generator for periodic reports with strict fallback requirements.
         """
@@ -50,7 +50,15 @@ class TextReportGenerator:
 
             # 4. Handle Empty Trades Case
             if not period_trades:
-                msg += "\nNo trades executed today.\n\nSystem is running normally."
+                msg += "\n⚠️ No trades executed today.\n"
+                if candidates:
+                    msg += "Top candidates were:\n"
+                    # Format: - TICKER (score 0.XX)
+                    for c in candidates[:5]:
+                        score = c.get('score', 0)
+                        msg += f"- {c['ticker']} (score {score:.2f})\n"
+                else:
+                    msg += "\nSystem is running normally."
                 return msg
 
             # 5. Full Report Logic (If Trades Exist)
@@ -75,16 +83,28 @@ class TextReportGenerator:
         except Exception as e:
             return f"📊 *{interval_name.upper()} REPORT*\n🕒 {timestamp_str}\n❌ ERROR: {str(e)}"
 
-    def generate_daily_report(self) -> str:
-        return self.generate_report(1, "Daily")
+    def generate_daily_report(self, candidates: List[Dict[str, Any]] = None) -> str:
+        return self.generate_report(1, "Daily", candidates=candidates)
 
-    def generate_weekly_report(self) -> str:
-        return self.generate_report(7, "Weekly")
+    def generate_weekly_report(self, candidates: List[Dict[str, Any]] = None) -> str:
+        return self.generate_report(7, "Weekly", candidates=candidates)
 
-    def generate_monthly_report(self) -> str:
-        return self.generate_report(30, "Monthly")
+    def generate_monthly_report(self, candidates: List[Dict[str, Any]] = None) -> str:
+        return self.generate_report(30, "Monthly", candidates=candidates)
 
 if __name__ == "__main__":
-    # Quick test if data exists
+    import sys
+    # Quick test for fallback logic
     gen = TextReportGenerator()
-    print(gen.generate_daily_report())
+    mock_candidates = [
+        {"ticker": "ADRO", "score": 0.4523},
+        {"ticker": "MDKA", "score": 0.4211}
+    ]
+    print("--- DAILY REPORT (No Trades) ---")
+    try:
+        report = gen.generate_daily_report(candidates=mock_candidates)
+        print(report)
+    except UnicodeEncodeError:
+        # Fallback for Windows terminal
+        report = gen.generate_daily_report(candidates=mock_candidates)
+        print(report.encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding))

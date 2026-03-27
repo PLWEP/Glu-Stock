@@ -19,7 +19,7 @@ class PipelineOrchestrator:
         self.trading_agent = TradingAgent(initial_cash=initial_cash)
         self.universe_agent = UniverseSelectionAgent(research_agent=self.research_agent)
         self.report_generator = ReportGenerator(output_dir=output_dir)
-        self.results = {"success": [], "failure": []}
+        self.results = {"success": [], "failure": [], "candidates": []}
 
     def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: str = "2024-01-01", end_date: str = "2024-03-27") -> Dict[str, Any]:
         """ Executes the full pipeline with strict telemetry and reporting enforcement. """
@@ -48,6 +48,9 @@ class PipelineOrchestrator:
         scanned_count = len(tickers)
         print(f"Orchestrator: [STEP 1/3] Scanned {scanned_count} tickers. Selecting Top {len(selected_stocks)}.")
         print(f"Selected stocks: {selected_stocks}")
+        
+        # Collect candidates for reporting
+        self.results["candidates"] = [{"ticker": t, "score": 0.0} for t in selected_stocks] # Placeholder or map from Universe agent
 
         # 2. Sequential Processing (Ensuring execution regardless of signal strength)
         for ticker in selected_stocks:
@@ -82,14 +85,14 @@ class PipelineOrchestrator:
         print("Orchestrator: Finalizing session and forced reporting...")
         final_summary = self._consolidate_results(all_data)
         self._generate_final_report(final_summary)
-        self._send_telegram_summary(final_summary)
+        self._send_telegram_summary(final_summary, candidates=self.results["candidates"])
         
         return final_summary
 
-    def _send_telegram_summary(self, summary: Dict[str, Any]):
+    def _send_telegram_summary(self, summary: Dict[str, Any], candidates: List[Dict[str, Any]] = None):
         """ Sends high-impact session summary to Telegram with robust fallback. """
         try:
-            report = TextReportGenerator().generate_daily_report()
+            report = TextReportGenerator().generate_daily_report(candidates=candidates)
             if not report or "Report" not in report: # Crude check for empty/missing components
                 report = "⚠️ WARNING: Report empty"
         except Exception as e:
