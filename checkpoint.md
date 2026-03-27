@@ -60,7 +60,8 @@ The Feature Module computes technical indicators while ensuring zero lookahead b
 
 The Orchestrator provides a high-level entry point for multi-ticker trading workflows.
 
-- **Pipeline:** Coordinates Research -> Strategy -> Trading -> Reporting.
+- **Pipeline:** Coordinates selection -> Research -> Strategy -> Trading -> Reporting.
+- **Dynamic Selection:** Integrates `UniverseSelectionAgent` for automatic ticker curation if none are provided.
 - **Resilience:** Per-ticker isolation and error handling.
 - **Reporting:** Automatic generation of consolidated performance dashboards.
 - **Status:** Production-ready.

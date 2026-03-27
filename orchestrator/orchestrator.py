@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from typing import List, Dict, Any, Optional
-from agents.agents import ResearchAgent, StrategyAgent, TradingAgent
+from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSelectionAgent
 from reporting.report import ReportGenerator
 
 class PipelineOrchestrator:
@@ -14,11 +14,22 @@ class PipelineOrchestrator:
         self.research_agent = ResearchAgent()
         self.strategy_agent = StrategyAgent()
         self.trading_agent = TradingAgent(initial_cash=initial_cash)
+        self.universe_agent = UniverseSelectionAgent(research_agent=self.research_agent)
         self.report_generator = ReportGenerator(output_dir=output_dir)
         self.results = {"success": [], "failure": []}
 
-    def run_full_pipeline(self, tickers: List[str], start_date: str, end_date: str) -> Dict[str, Any]:
-        """ Executes the full pipeline for a list of tickers. """
+    def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: str = "2024-01-01", end_date: str = "2024-03-27") -> Dict[str, Any]:
+        """ Executes the full pipeline for a list of tickers (dynamic or manual). """
+        
+        # 1. Dynamic Universe Selection
+        if tickers is None:
+            print(f"Orchestrator: No tickers provided. Selecting top {max_stocks} dynamically...")
+            tickers = self.universe_agent.select_universe(max_stocks, start_date, end_date)
+            
+        if not tickers:
+            print("Orchestrator: No tickers selected. Aborting pipeline.")
+            return {"error": "Empty universe"}
+
         print(f"Orchestrator: Starting full pipeline for {len(tickers)} tickers...")
         
         all_data = []
@@ -26,7 +37,7 @@ class PipelineOrchestrator:
         for ticker in tickers:
             print(f"---\nOrchestrator: Processing ticker [{ticker}]...")
             try:
-                # 1. Research (Fetch & Feature)
+                # 2. Research (Fetch & Feature)
                 df = self.research_agent.research([ticker], start_date, end_date)
                 
                 # 2. Strategy (Signals)

@@ -72,9 +72,10 @@ logger.info("Pipeline started", tickers=["BBCA.JK"])
 # OR Manual Trigger
 # python scheduler.py --now
 
-from agents.agents import UniverseSelectionAgent
-agent = UniverseSelectionAgent()
-top_stocks = agent.select_universe(max_stocks=5, start_date="2024-01-01", end_date="2024-03-01")
+from orchestrator.orchestrator import PipelineOrchestrator
+orch = PipelineOrchestrator(initial_cash=100000000)
+# This will call UniverseSelectionAgent automatically
+summary = orch.run_full_pipeline(max_stocks=10, start_date="2024-01-01", end_date="2024-03-27")
 ```
 
 ## Project Structure
@@ -162,4 +163,13 @@ top_stocks = agent.select_universe(max_stocks=5, start_date="2024-01-01", end_da
 - Autonomous orchestration of metadata filtering and market research.
 - Data-driven ranking and Top N selection for trading pipelines.
 - Integrated `UniverseManager` and `ResearchAgent` into a unified agent workflow.
+
+## [1.7.0] - 2026-03-27
+
+### Added
+
+- Integrated `UniverseSelectionAgent` into `PipelineOrchestrator`.
+- Support for dynamic, data-driven universe curation in the main pipeline.
+- Automatic fallback to autonomous selection when no tickers are provided.
+- Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.
