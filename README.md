@@ -231,5 +231,14 @@ To enable the Telegram bot:
 - Support for `/status` and `/portfolio` commands via Telegram Bot API.
 - Real-time monitoring of engine health and portfolio snapshots.
 - Lightweight polling architecture using the `requests` library.
+
+## [1.13.0] - 2026-03-27
+
+### Added
+
+- Integrated Telegram alerts for trade executions (BUY).
+- Automated error notifications hooked into `JsonLogger`.
+- Daily session summary reports sent via Telegram upon pipeline completion.
+- Centralized `utils/alerts.py` utility for one-off notifications.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

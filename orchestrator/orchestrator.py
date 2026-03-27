@@ -3,6 +3,7 @@ import pandas as pd
 from typing import List, Dict, Any, Optional
 from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSelectionAgent
 from reporting.report import ReportGenerator
+from utils.alerts import send_telegram_alert
 
 class PipelineOrchestrator:
     """
@@ -59,7 +60,22 @@ class PipelineOrchestrator:
         final_summary = self._consolidate_results(all_data)
         self._generate_final_report(final_summary)
         
+        # Telegram Daily Report
+        self._send_telegram_summary(final_summary)
+        
         return final_summary
+
+    def _send_telegram_summary(self, summary: Dict[str, Any]):
+        """ Sends session summary to Telegram. """
+        p = summary['final_portfolio']
+        msg = "*Daily Trading Session Complete*\n"
+        msg += f"✅ Processed: {len(summary['tickers_processed'])} assets\n"
+        msg += f"❌ Failures: {len(summary['failures'])}\n"
+        msg += f"💰 Final Cash: {p['cash']:,.2f}\n"
+        msg += f"📈 Final Equity: {p['equity']:,.2f}\n"
+        msg += f"📊 Realized PnL: {p['realized_pnl']:,.2f}"
+        
+        send_telegram_alert(msg)
 
     def _consolidate_results(self, all_dfs: List[pd.DataFrame]) -> Dict[str, Any]:
         """ Consolidates metrics from all successful ticker runs. """

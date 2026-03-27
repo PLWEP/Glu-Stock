@@ -3,6 +3,7 @@ import csv
 import pandas as pd
 from typing import Dict, Any
 from portfolio.portfolio import Portfolio
+from utils.alerts import send_telegram_alert
 
 class ExecutionEngine:
     """
@@ -50,6 +51,11 @@ class ExecutionEngine:
                 success = portfolio.update_position(ticker, shares_per_trade, price, "BUY")
                 status = "SUCCESS" if success else "FAILED"
                 self._log_trade(timestamp, ticker, "BUY", shares_per_trade, price, status)
+                
+                # Telegram Alert on successful BUY
+                if success:
+                    alert_msg = f"📈 *BUY ORDER EXECUTED*\n*Ticker:* {ticker}\n*Shares:* {shares_per_trade}\n*Price:* {price:,.2f}"
+                    send_telegram_alert(alert_msg)
 
             # 2. Close Long (Sell)
             elif (signal == 0 or signal == -1) and current_shares > 0:

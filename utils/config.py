@@ -55,6 +55,10 @@ class ConfigLoader:
         """ Returns the trading section of the configuration. """
         return self.config.get("trading", self.DEFAULT_CONFIG["trading"])
 
+    def get_config(self) -> Dict[str, Any]:
+        """ Returns the full configuration dictionary. """
+        return self.config
+
 if __name__ == "__main__":
     # Test loader
     loader = ConfigLoader()

@@ -2,6 +2,7 @@ import json
 import os
 from datetime import datetime
 from typing import Any
+from utils.alerts import send_telegram_alert
 
 class JsonLogger:
     """
@@ -36,8 +37,13 @@ class JsonLogger:
         self._log("INFO", message, **kwargs)
 
     def error(self, message: str, **kwargs):
-        """ Log an error message. """
+        """ Log an error message and send a Telegram alert. """
         self._log("ERROR", message, **kwargs)
+        # Trigger Telegram alert for errors
+        alert_msg = f"🚨 *ERROR ALERT*\n*Msg:* {message}"
+        if kwargs:
+            alert_msg += f"\n*Meta:* `{json.dumps(kwargs)}`"
+        send_telegram_alert(alert_msg)
 
 if __name__ == "__main__":
     # Quick sanity check

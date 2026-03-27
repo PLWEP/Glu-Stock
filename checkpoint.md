@@ -147,7 +147,8 @@ The Market Scanner Module provides lightweight candidate evaluation against scor
 The Telegram Integration Module provides real-time monitoring and control of the trading engine.
 
 - **Bot Commands:** `/status` for engine health, `/portfolio` for real-time asset tracking.
-- **Provider:** Standalone bot using Telegram Bot API (Long Polling).
+- **Alert Triggers:** Real-time push notifications for `BUY` orders, system errors, and daily session summaries.
+- **Provider:** Standalone bot and centralized `utils/alerts.py` utility.
 - **Data Source:** Direct integration with `TradingDatabase` and system logs.
 - **Status:** Production-ready.
 
