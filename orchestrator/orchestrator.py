@@ -34,11 +34,14 @@ class PipelineOrchestrator:
             tickers = self.universe_agent.select_universe(max_stocks, start_date, end_date)
             
         tickers = tickers or []
+        # Ensure we only process the top 5 (selected_stocks)
+        selected_stocks = tickers[:5]
         scanned_count = len(tickers)
-        print(f"Orchestrator: [STEP 1/3] Scanned {scanned_count} tickers.")
+        print(f"Orchestrator: [STEP 1/3] Scanned {scanned_count} tickers. Selecting Top {len(selected_stocks)}.")
+        print(f"Selected stocks: {selected_stocks}")
 
-        # 2. Sequential Processing
-        for ticker in tickers:
+        # 2. Sequential Processing (Ensuring execution regardless of signal strength)
+        for ticker in selected_stocks:
             print(f"---\nOrchestrator: Processing [{ticker}]...")
             try:
                 # A. Research
@@ -48,13 +51,11 @@ class PipelineOrchestrator:
                 
                 # B. Strategy & Candidate Logic
                 df = self.strategy_agent.get_recommendations(df)
-                if not df.empty and df['final_signal'].iloc[-1] == 1:
-                    candidate_count += 1
                 
-                # C. Execution
-                # Check current trade count via database/state if needed, here we simplify to success tracking
+                # C. Execution (Always attempt trade logic for selected stocks)
                 self.trading_agent.trade(df)
-                trade_count += 1 # Increment on attempt, more granular tracking available in TradingAgent
+                trade_count += 1
+                candidate_count += 1 # Every selected stock is a candidate in this mode
                 
                 # D. Success Tracking
                 self.results["success"].append(ticker)
@@ -64,8 +65,9 @@ class PipelineOrchestrator:
                 print(f"Orchestrator: Error processing [{ticker}]: {str(e)}")
                 self.results["failure"].append({"ticker": ticker, "error": str(e)})
 
-        print(f"---\nOrchestrator: [STEP 2/3] Found {candidate_count} candidates.")
+        print(f"---\nOrchestrator: [STEP 2/3] Found {candidate_count} candidates for execution.")
         print(f"Orchestrator: [STEP 3/3] Processed {trade_count} execution attempts.")
+        print(f"Selected stocks: {selected_stocks}")
 
         # 3. Forced Reporting (Always Runs)
         print("Orchestrator: Finalizing session and forced reporting...")

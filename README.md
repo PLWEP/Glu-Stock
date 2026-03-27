@@ -338,5 +338,14 @@ To enable the Telegram bot:
 - Removed binary threshold filtering to ensure system output visibility on every scan.
 - Hardened scanner loop with resilient try-except blocks for per-ticker data gaps.
 - Standardized `UniverseManager` to lowercase column schema for pipeline consistency.
+
+## [1.26.0] - 2026-03-27
+
+### Changed
+
+- Upgraded `PipelineOrchestrator` to a guaranteed execution model.
+- Implemented `Top-5` selective execution, ignoring binary signal strength for selected candidates.
+- Removed early exit guards to ensure consistency in pipeline lifecycle (Research to Reporting).
+- Added session-end logging for audited selection visibility (`Selected stocks`).
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.
