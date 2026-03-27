@@ -118,6 +118,7 @@ The Agents Module provides an orchestration layer using a multi-agent system.
 - **ResearchAgent:** Orchestrates data fetching and feature engineering.
 - **StrategyAgent:** Handles signal generation and backtesting.
 - **TradingAgent:** Coordinates risk-managed execution and portfolio state.
+- **UniverseSelectionAgent:** Orchestrates metadata filtering and data-driven ranking to curate the daily trading universe.
 - **Status:** Production-ready.
 
 ## Core Execution Rules

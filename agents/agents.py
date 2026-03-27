@@ -7,6 +7,7 @@ from backtesting.backtest import VectorizedBacktester
 from portfolio.portfolio import Portfolio
 from execution.execution import ExecutionEngine
 from risk.risk import RiskManager
+from data.universe import UniverseManager
 
 class ResearchAgent:
     """ Handles data collection and feature engineering. """
@@ -38,6 +39,54 @@ class StrategyAgent:
         # Assume df already has signals
         self.backtester.run_backtest(df)
         return self.backtester.get_metrics()
+
+class UniverseSelectionAgent:
+    """ 
+    Autonomous agent for dynamic universe curation and ranking.
+    Orchestrates filtering and data-driven scoring.
+    """
+    def __init__(self, research_agent: Optional[ResearchAgent] = None):
+        self.research_agent = research_agent or ResearchAgent()
+        self.universe_manager = UniverseManager()
+
+    def select_universe(self, max_stocks: int, start_date: str, end_date: str) -> List[str]:
+        """
+        Executes the selection pipeline:
+        Metadata -> Strategic Filter -> Research -> Factor Ranking -> Selection.
+        """
+        print(f"UniverseSelectionAgent: Curating top {max_stocks} stocks...")
+        
+        # 1. Load Metadata
+        all_metadata = self.universe_manager.get_idx_tickers()
+        
+        # 2. Strategic Filtering (Exclude Bank/BUMN)
+        filtered_metadata = self.universe_manager.filter_excluded_stocks(all_metadata)
+        tickers = filtered_metadata["ticker"].tolist()
+        
+        # 3. Orchestrate Research (Collect market data)
+        # Note: We need per-ticker dataframes to pass to UniverseManager.rank_stocks
+        # ResearchAgent returns a concatenated MultiIndex DataFrame.
+        df_researched = self.research_agent.research(tickers, start_date, end_date)
+        
+        # 4. Partition data for ranking
+        price_data_dict = {}
+        for ticker in tickers:
+            try:
+                ticker_data = df_researched.xs(ticker, level="ticker")
+                if not ticker_data.empty:
+                    price_data_dict[ticker] = ticker_data
+            except KeyError:
+                continue
+
+        # 5. Execute Multi-Factor Ranking
+        top_tickers = self.universe_manager.rank_stocks(
+            filtered_metadata, 
+            price_data_dict, 
+            top_n=max_stocks
+        )
+        
+        print(f"UniverseSelectionAgent: Selected {top_tickers}")
+        return top_tickers
 
 class TradingAgent:
     """ Coordinates execution and risk-aware portfolio management. """

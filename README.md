@@ -72,9 +72,9 @@ logger.info("Pipeline started", tickers=["BBCA.JK"])
 # OR Manual Trigger
 # python scheduler.py --now
 
-from data.universe import UniverseManager
-mgr = UniverseManager()
-rankings = mgr.rank_stocks(mgr.filter_excluded_stocks(mgr.get_idx_tickers()), price_data)
+from agents.agents import UniverseSelectionAgent
+agent = UniverseSelectionAgent()
+top_stocks = agent.select_universe(max_stocks=5, start_date="2024-01-01", end_date="2024-03-01")
 ```
 
 ## Project Structure
@@ -153,4 +153,13 @@ rankings = mgr.rank_stocks(mgr.filter_excluded_stocks(mgr.get_idx_tickers()), pr
 - Metadata-driven IDX universe management via `data/idx_stocks.csv`.
 - Strategic filtering logic (Bank/BUMN exclusion).
 - Multi-factor ranking system (Volume, Volatility, Trend).
+
+## [1.6.0] - 2026-03-27
+
+### Added
+
+- `UniverseSelectionAgent` in `agents/agents.py`.
+- Autonomous orchestration of metadata filtering and market research.
+- Data-driven ranking and Top N selection for trading pipelines.
+- Integrated `UniverseManager` and `ResearchAgent` into a unified agent workflow.
 - Standalone report exports with embedded assets.
