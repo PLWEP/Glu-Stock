@@ -273,5 +273,13 @@ To enable the Telegram bot:
 - Advanced Telegram bot commands: `/report daily`, `/report weekly`, `/report monthly`.
 - Automated session-end reporting integrated into `PipelineOrchestrator`.
 - Enhanced `/portfolio` command with comprehensive performance metrics.
+
+## [1.18.0] - 2026-03-27
+
+### Added
+
+- Multi-timeframe strategy support for `daily`, `weekly`, `monthly`, and `yearly` intervals.
+- Specialized factor weighting logic tailored for different investment horizons.
+- Strict "no lookahead bias" enforcement across all timeframes.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.
