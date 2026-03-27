@@ -122,6 +122,16 @@ The Agents Module provides an orchestration layer using a multi-agent system.
 - **UniverseSelectionAgent:** Orchestrates metadata filtering and data-driven ranking to curate the daily trading universe.
 - **Status:** Production-ready.
 
+## Module Logic: Deployment Module
+
+The Deployment Module provides institutional process management using PM2.
+
+- **Entry Point:** `main.py` (One-shot execution of the full pipeline).
+- **Process Manager:** `ecosystem.config.js`.
+- **Scheduling:** Automated weekday 09:00 AM start via PM2 cron.
+- **Resource Limits:** 500MB memory limit with automated restart.
+- **Status:** Production-ready.
+
 ## Core Execution Rules
 
 1. Python: `c:/Users/MP2NE93D/miniconda3/python.exe`.

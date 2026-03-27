@@ -72,10 +72,11 @@ logger.info("Pipeline started", tickers=["BBCA.JK"])
 # OR Manual Trigger
 # python scheduler.py --now
 
-from orchestrator.orchestrator import PipelineOrchestrator
-orch = PipelineOrchestrator(initial_cash=100000000)
-# This will call UniverseSelectionAgent automatically
-summary = orch.run_full_pipeline(max_stocks=10, start_date="2024-01-01", end_date="2024-03-27")
+# Manual execution
+python main.py
+
+# Deployment with PM2
+pm2 start ecosystem.config.js
 ```
 
 ## Project Structure
@@ -171,5 +172,14 @@ summary = orch.run_full_pipeline(max_stocks=10, start_date="2024-01-01", end_dat
 - Integrated `UniverseSelectionAgent` into `PipelineOrchestrator`.
 - Support for dynamic, data-driven universe curation in the main pipeline.
 - Automatic fallback to autonomous selection when no tickers are provided.
+
+## [1.8.0] - 2026-03-27
+
+### Added
+
+- PM2 deployment configuration in `ecosystem.config.js`.
+- One-shot entry point `main.py` for scheduled execution.
+- Automated weekday 09:00 AM cron orchestration.
+- Memory limiting (500MB) and resource guarding.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

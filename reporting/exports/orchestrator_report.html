@@ -1,0 +1,3335 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+            <meta charset="UTF-8">
+            <title>Glu-Stock Performance Report</title>
+            <style>
+        :root {
+            --bg: #0b0e14;
+            --surface: #161b22;
+            --accent: #00f2ff;
+            --text-primary: #e6edf3;
+            --text-secondary: #8b949e;
+            --success: #3fb950;
+            --error: #f85149;
+            --glass: rgba(22, 27, 34, 0.7);
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 40px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        header {
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        h1 { font-weight: 300; letter-spacing: 2px; color: var(--accent); }
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .metric-item {
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--accent);
+            display: block;
+        }
+        .metric-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .plot-container img {
+            width: 100%;
+            border-radius: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 12px;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 13px;
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 14px;
+        }
+        .status-success { color: var(--success); }
+        .status-error { color: var(--error); }
+        </style>
+        </head>
+        <body>
+            <div class="container">
+                <header>
+                    <h1>GLU-STOCK TRADING REPORT</h1>
+                    <p style="color: var(--text-secondary)">Performance Analytics & Trade History</p>
+                </header>
+                
+                <div class="card metrics-grid">
+                    <div class="metric-item"><span class="metric-value">$90659.38</span><span class="metric-label">Total Equity</span></div><div class="metric-item"><span class="metric-value">$55789.38</span><span class="metric-label">Cash</span></div><div class="metric-item"><span class="metric-value">$-9340.62</span><span class="metric-label">Realized PnL</span></div><div class="metric-item"><span class="metric-value">5</span><span class="metric-label">Assets</span></div><div class="metric-item"><span class="metric-value">0</span><span class="metric-label">Failures</span></div>
+                </div>
+                
+                <div class="card plot-container">
+                    <img src="data:image/png;base64,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" alt="Equity Curve">
+                </div>
+                
+                <div class="card">
+                    <h3 style="margin-top: 0; font-weight: 400; color: var(--accent)">Recent Trade History</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="dataframe trade-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>timestamp</th>
+      <th>ticker</th>
+      <th>action</th>
+      <th>shares</th>
+      <th>price</th>
+      <th>status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>2023-03-24 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8071.875977</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-03-27 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>7957.543945</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-05-24 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8419.808594</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-05-25 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8443.129883</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-07-13 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8513.101562</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-07-14 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8583.071289</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-03 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8629.719727</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-04 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8536.425781</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-07 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8653.042969</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-08 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8583.071289</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-03 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8583.071289</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-04 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8583.071289</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-12 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8443.129883</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-13 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8466.455078</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-03 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8303.190430</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-06 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8443.129883</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-23 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8326.512695</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-24 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8326.512695</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-30 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8373.160156</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-01 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8349.836914</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-14 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8483.415039</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-15 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8647.458984</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-15 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9233.330078</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-16 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9327.069336</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-03-07 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9491.114258</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-03-08 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9514.547852</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-03-25 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9661.875000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-03-26 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9637.901367</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-04-29 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9398.152344</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-04-30 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9398.152344</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-05-03 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9446.101562</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-05-06 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9398.152344</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-05 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9062.503906</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-06 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9086.478516</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-20 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9038.528320</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-21 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9206.353516</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-23 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9757.775391</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-24 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9661.875000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-25 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9877.649414</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-26 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9901.624023</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-08-19 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9949.574219</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-08-20 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9997.523438</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-09-12 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>10045.473633</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-09-13 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9997.523438</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-10-17 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>10285.222656</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-10-18 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>10309.196289</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-26 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9637.781250</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-28 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9637.781250</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-12-03 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9830.537109</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-12-04 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9830.537109</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-10 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9372.743164</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-13 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9324.553711</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-15 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>9445.025391</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-16 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>9396.835938</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-17 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8987.230469</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-18 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8963.136719</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-05 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8674.003906</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-06 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8649.909180</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-27 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8444.178711</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-04-08 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>7723.939941</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-04-10 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8170.984863</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-04-11 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8220.656250</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-16 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8469.014648</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-17 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8469.014648</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-24 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8444.178711</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-25 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8394.507812</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-08-05 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8369.671875</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-08-06 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8245.492188</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-08 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>7649.432617</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-10 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>7748.775879</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-17 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>7798.447754</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-18 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>7649.432617</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-23 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>7823.283691</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-24 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>7723.939941</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-07 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>7525.253418</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-08 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>7326.566895</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-09 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>7500.417969</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-10 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>7351.402832</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-17 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>7450.746094</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-20 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>7823.283691</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-06 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>8175.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-07 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>8150.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-27 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>7500.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-30 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>7400.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-04 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>7800.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-05 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>7800.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-25 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>7325.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-26 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>7300.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-03-25 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>6900.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-03-26 00:00:00</td>
+      <td>BBCA.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>6875.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-02-22 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>11.0</td>
+      <td>3235.948975</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-02-23 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>11.0</td>
+      <td>3328.164795</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-04-05 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>11.0</td>
+      <td>3479.064209</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-04-06 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>11.0</td>
+      <td>3562.896973</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-05-25 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>11.0</td>
+      <td>3453.914551</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-05-26 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>11.0</td>
+      <td>3462.297607</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-07-03 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>11.0</td>
+      <td>3494.438721</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-07-04 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>11.0</td>
+      <td>3468.230225</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-07-27 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>12.0</td>
+      <td>3249.827881</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-01 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>12.0</td>
+      <td>3276.036377</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-02 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>12.0</td>
+      <td>3223.619629</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-03 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>12.0</td>
+      <td>3249.827881</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-10 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>11.0</td>
+      <td>3319.716797</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-11 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>11.0</td>
+      <td>3328.452881</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-30 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>11.0</td>
+      <td>3328.452881</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-31 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>11.0</td>
+      <td>3258.564209</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-09-15 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>12.0</td>
+      <td>3249.827881</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-09-18 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>12.0</td>
+      <td>3214.883545</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-09-19 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>11.0</td>
+      <td>3258.564209</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-09-20 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>11.0</td>
+      <td>3328.452881</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-30 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>13.0</td>
+      <td>2987.745117</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-31 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>13.0</td>
+      <td>3048.897705</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-06 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>12.0</td>
+      <td>3188.675049</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-07 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>12.0</td>
+      <td>3118.786377</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-10 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>12.0</td>
+      <td>3101.314209</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-13 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>12.0</td>
+      <td>3075.105957</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-15 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>12.0</td>
+      <td>3101.314209</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-16 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>12.0</td>
+      <td>3092.578125</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-03-26 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>12.0</td>
+      <td>3162.466797</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-04-30 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>12.0</td>
+      <td>2769.342529</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-05-02 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>13.0</td>
+      <td>2725.662109</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-05-03 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>13.0</td>
+      <td>2760.606689</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-21 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>13.0</td>
+      <td>2734.613037</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-24 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>13.0</td>
+      <td>2734.613037</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-08-16 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>13.0</td>
+      <td>2743.882812</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-08-19 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>13.0</td>
+      <td>2716.073242</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-10-17 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>13.0</td>
+      <td>2818.041992</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-10-18 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>13.0</td>
+      <td>2873.661133</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-11 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>15.0</td>
+      <td>2493.596191</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-18 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>15.0</td>
+      <td>2400.897461</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-20 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>14.0</td>
+      <td>2484.326416</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-21 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>14.0</td>
+      <td>2567.755371</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-12-27 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>14.0</td>
+      <td>2549.215576</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-12-30 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>14.0</td>
+      <td>2512.135986</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-10 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>14.0</td>
+      <td>2484.326416</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-13 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>14.0</td>
+      <td>2475.056641</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-22 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>14.0</td>
+      <td>2530.675781</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-23 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>14.0</td>
+      <td>2512.135986</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-11 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>17.0</td>
+      <td>2150.610840</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-12 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>17.0</td>
+      <td>2298.928955</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-18 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>15.0</td>
+      <td>2484.326416</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-19 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>15.0</td>
+      <td>2475.056641</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-14 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>16.0</td>
+      <td>2243.309570</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-17 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>16.0</td>
+      <td>2243.309570</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-26 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>16.0</td>
+      <td>2261.849365</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-27 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>16.0</td>
+      <td>2234.039795</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-04-10 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>17.0</td>
+      <td>2178.420654</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-04-11 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>17.0</td>
+      <td>2159.880859</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-05-16 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>14.0</td>
+      <td>2539.945557</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-05-19 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>14.0</td>
+      <td>2614.104736</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-02 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>13.0</td>
+      <td>2780.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-03 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>13.0</td>
+      <td>2710.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-21 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>13.0</td>
+      <td>2800.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-22 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>13.0</td>
+      <td>2850.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-17 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>11.0</td>
+      <td>3340.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-18 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>11.0</td>
+      <td>3250.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-21 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>11.0</td>
+      <td>3280.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-22 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>11.0</td>
+      <td>3150.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-11-24 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>9.0</td>
+      <td>3700.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-11-25 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>9.0</td>
+      <td>3650.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-07 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>10.0</td>
+      <td>3540.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-08 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>10.0</td>
+      <td>3530.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-13 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>10.0</td>
+      <td>3620.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-14 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>10.0</td>
+      <td>3650.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-19 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>10.0</td>
+      <td>3480.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-20 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>10.0</td>
+      <td>3480.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-03-10 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>12.0</td>
+      <td>2960.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-03-11 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>SELL</td>
+      <td>12.0</td>
+      <td>3000.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-03-26 00:00:00</td>
+      <td>TLKM.JK</td>
+      <td>BUY</td>
+      <td>11.0</td>
+      <td>3170.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-03-31 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4479.337402</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-04-03 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4479.337402</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-01 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5601.023438</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-02 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5580.655762</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-09-05 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5376.982422</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-09-06 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5315.880859</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-02 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5112.207031</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-03 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5051.104980</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-13 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4947.946777</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-16 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4844.433105</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-19 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4740.920410</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-24 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4803.028320</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-30 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4803.028320</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-31 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4782.325195</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-04 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4761.623047</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-05 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4740.920410</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-14 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4658.109375</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-15 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4678.811523</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-28 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4637.406738</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-29 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4678.811523</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-01-12 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4637.406738</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-01-15 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4575.298340</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-01-22 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4326.865723</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-01-30 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4223.352051</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-02 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4409.676758</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-05 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4285.459961</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-05-02 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4285.459961</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-05-03 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4326.865723</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-05-16 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4253.218750</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-05-17 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4334.490723</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-06 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4117.766113</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-07 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4117.766113</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-21 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4054.554932</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-24 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4000.373291</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-22 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4081.644775</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-23 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4018.433838</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-24 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4090.675293</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-25 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4054.554932</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-26 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4162.916992</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-29 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4162.916992</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-09-19 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4763.424316</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-09-20 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4718.273438</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-10-22 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4857.218750</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-10-23 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4880.238770</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-25 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4765.139160</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-26 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4742.119141</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-17 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4548.750977</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-20 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4521.126953</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-17 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4364.590820</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-18 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4419.839355</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-03 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4309.343262</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-04 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4318.551270</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-21 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4456.670898</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-24 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4318.551270</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-26 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4419.839355</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-27 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4530.334961</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-04-14 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4539.542969</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-04-15 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4484.294922</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-05-16 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4493.502930</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-05-19 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4548.750977</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-04 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4541.937988</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-07 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4600.924316</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-23 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>5800.310547</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-24 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>5800.310547</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-21 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>6000.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-22 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>6175.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-12-04 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>6725.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-12-05 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>6700.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-02 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>6800.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-05 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>6875.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-10 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>6850.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-11 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>6750.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-26 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>6725.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-27 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>6675.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-03-25 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>6600.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-03-26 00:00:00</td>
+      <td>ASII.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>6250.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-03-09 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4211.988770</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-03-10 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4181.759766</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-03-24 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4393.366211</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-03-27 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4321.067383</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-05-25 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4384.612793</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-05-26 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4342.249512</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-06-15 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4342.249512</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-06-16 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4363.431152</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-06-26 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4342.249512</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-06-27 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4405.794434</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-09-04 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5168.335938</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-09-05 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5168.335938</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-03 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5147.154297</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-04 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5189.517578</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-03 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4935.337402</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-06 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5020.063965</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-15 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4998.881836</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-12-18 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5020.063965</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-02 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>5655.515137</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-05 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>5782.605469</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-03-20 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>6278.725586</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-03-21 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>6278.725586</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-04 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5477.186035</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-05 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5343.596191</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-21 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5454.920898</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-24 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5343.596191</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-08-01 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>6011.545898</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-08-02 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>6056.075684</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-09-18 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>6590.435059</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-09-19 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>6590.435059</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-10-17 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>6434.580566</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-10-18 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>6390.050293</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-21 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>5477.186035</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-22 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>5566.246094</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-25 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>5855.690918</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-26 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>5699.835938</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-12-03 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>3.0</td>
+      <td>5588.511230</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-12-04 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>3.0</td>
+      <td>5677.570801</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-03 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5165.476074</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-06 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5054.151855</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-08 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5120.946289</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-09 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5120.946289</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-15 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5120.946289</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-16 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5232.271484</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-06 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4542.056641</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-07 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4586.586914</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-10 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4452.997070</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-13 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4475.261719</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-02-28 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4096.757324</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-03 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4363.937012</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-06 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4337.218750</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-07 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4310.500488</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-25 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4221.440918</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-26 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4586.586914</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-05-15 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5219.554688</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-05-16 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5366.583984</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-11 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4871.583984</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-14 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4597.128906</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-24 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4704.950684</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-25 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4597.128906</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-08-05 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>4655.940430</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-08-06 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4606.930664</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-29 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4312.871094</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-30 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4312.871094</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-09 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4303.069336</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-10 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4165.841797</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-15 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>3969.802002</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-16 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4009.010010</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-21 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>5.0</td>
+      <td>4263.861328</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-10-22 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>5.0</td>
+      <td>4244.257324</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-12-18 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5048.020020</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-12-19 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5072.524902</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-20 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5025.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-21 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>4990.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-05 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>BUY</td>
+      <td>4.0</td>
+      <td>5050.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-06 00:00:00</td>
+      <td>BMRI.JK</td>
+      <td>SELL</td>
+      <td>4.0</td>
+      <td>5050.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-03-06 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>175.0</td>
+      <td>128.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-03-07 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>175.0</td>
+      <td>129.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-04-10 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>240.0</td>
+      <td>94.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-04-11 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>240.0</td>
+      <td>99.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-04-13 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>253.0</td>
+      <td>91.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-04-14 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>253.0</td>
+      <td>92.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-04-28 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>222.0</td>
+      <td>104.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-05-02 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>222.0</td>
+      <td>103.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-07-17 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>195.0</td>
+      <td>118.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-07-18 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>195.0</td>
+      <td>115.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-09 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>245.0</td>
+      <td>93.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-15 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>245.0</td>
+      <td>97.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-21 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>264.0</td>
+      <td>88.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-29 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>264.0</td>
+      <td>91.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-30 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>258.0</td>
+      <td>91.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-08-31 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>258.0</td>
+      <td>96.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-11 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>304.0</td>
+      <td>79.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-10-31 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>304.0</td>
+      <td>60.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-01 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>351.0</td>
+      <td>62.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2023-11-02 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>351.0</td>
+      <td>71.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-01-12 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>253.0</td>
+      <td>91.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-01-15 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>253.0</td>
+      <td>91.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-01 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>255.0</td>
+      <td>90.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-02 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>255.0</td>
+      <td>90.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-12 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>267.0</td>
+      <td>86.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-13 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>267.0</td>
+      <td>86.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-02-29 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>324.0</td>
+      <td>71.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-03-06 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>324.0</td>
+      <td>74.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-03-18 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>320.0</td>
+      <td>73.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-03-19 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>320.0</td>
+      <td>72.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-04-29 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>369.0</td>
+      <td>63.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-04-30 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>369.0</td>
+      <td>63.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-12 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>447.0</td>
+      <td>52.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-24 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>447.0</td>
+      <td>51.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-06-25 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>462.0</td>
+      <td>50.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-07-17 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>462.0</td>
+      <td>51.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-08-14 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>439.0</td>
+      <td>53.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-08-15 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>439.0</td>
+      <td>54.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-09-06 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>442.0</td>
+      <td>53.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-09-09 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>442.0</td>
+      <td>53.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-10-17 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>345.0</td>
+      <td>68.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-10-18 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>345.0</td>
+      <td>68.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-19 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>317.0</td>
+      <td>74.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2024-11-20 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>317.0</td>
+      <td>72.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-06 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>290.0</td>
+      <td>80.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-01-07 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>290.0</td>
+      <td>80.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-06 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>283.0</td>
+      <td>82.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-07 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>283.0</td>
+      <td>86.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-18 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>285.0</td>
+      <td>83.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-19 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>285.0</td>
+      <td>82.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-03-27 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>283.0</td>
+      <td>83.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-04-08 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>283.0</td>
+      <td>71.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-04-16 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>277.0</td>
+      <td>80.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-04-17 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>277.0</td>
+      <td>80.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-05-28 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>346.0</td>
+      <td>64.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-06-10 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>346.0</td>
+      <td>66.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-06-12 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>335.0</td>
+      <td>67.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-06-13 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>335.0</td>
+      <td>64.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-06-23 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>387.0</td>
+      <td>57.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-06-25 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>387.0</td>
+      <td>59.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-06-30 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>385.0</td>
+      <td>58.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-07-01 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>385.0</td>
+      <td>59.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-22 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>417.0</td>
+      <td>54.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-25 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>417.0</td>
+      <td>55.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-26 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>398.0</td>
+      <td>57.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-09-29 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>398.0</td>
+      <td>56.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-11-25 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>346.0</td>
+      <td>65.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-11-26 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>346.0</td>
+      <td>65.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-12-01 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>336.0</td>
+      <td>67.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-12-02 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>336.0</td>
+      <td>65.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-12-08 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>318.0</td>
+      <td>70.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2025-12-09 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>318.0</td>
+      <td>71.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-06 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>329.0</td>
+      <td>68.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-07 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>329.0</td>
+      <td>67.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-14 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>322.0</td>
+      <td>69.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-01-15 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>322.0</td>
+      <td>68.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-19 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>363.0</td>
+      <td>61.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-02-20 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>363.0</td>
+      <td>61.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-03-16 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>BUY</td>
+      <td>425.0</td>
+      <td>52.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+    <tr>
+      <td>2026-03-25 00:00:00</td>
+      <td>GOTO.JK</td>
+      <td>SELL</td>
+      <td>425.0</td>
+      <td>53.000000</td>
+      <td><span class="status-success">SUCCESS</span></td>
+    </tr>
+  </tbody>
+</table>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+        
