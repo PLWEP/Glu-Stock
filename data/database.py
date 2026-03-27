@@ -70,7 +70,12 @@ class TradingDatabase:
                 VALUES (?, ?, ?, ?, 'OPEN', ?, ?)
             """, (ticker, entry_price, qty, entry_date, strategy, timeframe))
             conn.commit()
-            return cursor.lastrowid
+            trade_id = cursor.lastrowid
+            print(f"Database: Trade inserted for {ticker}. Total trades in DB: {self.count_trades()}")
+            return trade_id
+        except Exception as e:
+            print(f"Database Error: Failed to insert trade: {str(e)}")
+            raise e
         finally:
             conn.close()
 
@@ -87,6 +92,10 @@ class TradingDatabase:
                 WHERE id = ?
             """, (exit_price, exit_date, pnl, trade_id))
             conn.commit()
+            print(f"Database: Trade {trade_id} closed. Total trades in DB: {self.count_trades()}")
+        except Exception as e:
+            print(f"Database Error: Failed to close trade {trade_id}: {str(e)}")
+            raise e
         finally:
             conn.close()
 
@@ -126,6 +135,28 @@ class TradingDatabase:
             cursor = conn.cursor()
             cursor.execute("SELECT * FROM portfolio_snapshots ORDER BY date DESC")
             return [dict(row) for row in cursor.fetchall()]
+        finally:
+            conn.close()
+
+    # --- Debug & Utility Functions ---
+
+    def count_trades(self) -> int:
+        """ Returns the total number of trades in the database. """
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM trades")
+            return cursor.fetchone()[0]
+        finally:
+            conn.close()
+
+    def count_open_positions(self) -> int:
+        """ Returns the number of currently OPEN trades. """
+        conn = self._get_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT COUNT(*) FROM trades WHERE status = 'OPEN'")
+            return cursor.fetchone()[0]
         finally:
             conn.close()
 

@@ -305,5 +305,13 @@ To enable the Telegram bot:
 - Strict reporting logic in `TextReportGenerator` to ensure messages are never empty.
 - Added mandatory timestamps and portfolio valuation to all periodic reports.
 - Implemented explicit "No trades executed" fallback message for zero-activity periods.
+
+## [1.22.0] - 2026-03-27
+
+### Added
+
+- Debug functions `count_trades()` and `count_open_positions()` to `TradingDatabase`.
+- Real-time transaction logging with total trade counters in `insert_trade` and `update_trade_close`.
+- Enhanced exception handling in database operations to prevent silent failures.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.
