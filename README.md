@@ -265,5 +265,13 @@ To enable the Telegram bot:
 - Centralized `utils/text_report.py` for Telegram-friendly reporting.
 - Automated generation of Daily, Weekly, and Monthly performance summaries.
 - Enhanced reporting with emojis and formatted trade logs.
+
+## [1.17.0] - 2026-03-27
+
+### Added
+
+- Advanced Telegram bot commands: `/report daily`, `/report weekly`, `/report monthly`.
+- Automated session-end reporting integrated into `PipelineOrchestrator`.
+- Enhanced `/portfolio` command with comprehensive performance metrics.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

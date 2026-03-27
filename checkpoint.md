@@ -166,10 +166,10 @@ The Text Report Module generates human-readable Markdown summaries for Telegram.
 
 The Telegram Integration Module provides real-time monitoring and control of the trading engine.
 
-- **Bot Commands:** `/status` for engine health, `/portfolio` for real-time asset tracking.
-- **Alert Triggers:** Real-time push notifications for `BUY` orders, system errors, and daily session summaries.
-- **Provider:** Standalone bot and centralized `utils/alerts.py` utility.
-- **Data Source:** Direct integration with `TradingDatabase` and system logs.
+- **Bot Commands:** `/status` (health), `/portfolio` (detailed performance), `/report [daily|weekly|monthly]` (periodic summaries).
+- **Alert Triggers:** Real-time `BUY` icons, errors, and automated end-of-session reports.
+- **Provider:** Integrated bot listener and proactive orchestrator alerts.
+- **Data Source:** Direct consumption of `TradingDatabase` and `TextReportGenerator`.
 - **Status:** Production-ready.
 
 ## Core Execution Rules

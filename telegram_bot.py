@@ -6,6 +6,7 @@ from typing import Dict, Any, Optional
 from utils.config import ConfigLoader
 from data.database import TradingDatabase
 from utils.logger import JsonLogger
+from utils.text_report import TextReportGenerator
 
 class TelegramBot:
     """
@@ -20,6 +21,7 @@ class TelegramBot:
         self.api_url = f"https://api.telegram.org/bot{self.token}"
         self.db = TradingDatabase()
         self.logger = JsonLogger(log_file="logs/telegram_bot.log")
+        self.reporter = TextReportGenerator()
         self.offset = 0
 
     def send_message(self, text: str):
@@ -42,36 +44,38 @@ class TelegramBot:
         status_msg += f"📅 Time: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
         
         # Check last scheduler run
-        log_path = "logs/scheduler.log"
+        log_path = "logs/trading.log" # Updated to main trading log
         if os.path.exists(log_path):
             with open(log_path, "r") as f:
                 lines = f.readlines()
                 if lines:
                     last_log = json.loads(lines[-1])
-                    status_msg += f"📊 Last Run: {last_log.get('timestamp')}\n"
-                    status_msg += f"✅ Result: {last_log.get('message')}"
+                    status_msg += f"📊 Last Activity: {last_log.get('timestamp')}\n"
+                    status_msg += f"✅ Message: {last_log.get('message')}"
         
         self.send_message(status_msg)
 
     def handle_portfolio(self):
-        """ Handles /portfolio command. """
-        history = self.db.get_portfolio_history()
-        if not history:
-            self.send_message("❌ No portfolio history found.")
+        """ Handles /portfolio command - Provides a detailed performance summary. """
+        report = self.reporter.generate_daily_report()
+        self.send_message(report)
+
+    def handle_report(self, command_text: str):
+        """ Handles /report [daily|weekly] commands. """
+        parts = command_text.split()
+        if len(parts) < 2:
+            self.send_message("❌ Usage: `/report [daily|weekly|monthly]`")
             return
         
-        latest = history[0]
-        msg = "*Current Portfolio Summary*\n"
-        msg += f"💰 Cash: IDR {latest['cash']:,.2f}\n"
-        msg += f"📈 Equity: IDR {latest['equity']:,.2f}\n"
-        
-        trades = self.db.get_all_trades()
-        if trades:
-            msg += "\n*Recent Positions & Trades:*\n"
-            for t in trades[:5]: # Last 5 trades
-                msg += f"• {t['side']} {t['ticker']} @ {t['price']:,.0f}\n"
-        
-        self.send_message(msg)
+        subcommand = parts[1].lower()
+        if subcommand == "daily":
+            self.send_message(self.reporter.generate_daily_report())
+        elif subcommand == "weekly":
+            self.send_message(self.reporter.generate_weekly_report())
+        elif subcommand == "monthly":
+            self.send_message(self.reporter.generate_monthly_report())
+        else:
+            self.send_message(f"❌ Unknown report type: `{subcommand}`")
 
     def poll(self):
         """ Polling loop for Telegram updates. """
@@ -96,6 +100,8 @@ class TelegramBot:
                             self.handle_status()
                         elif text == "/portfolio":
                             self.handle_portfolio()
+                        elif text.startswith("/report"):
+                            self.handle_report(text)
                 
             except KeyboardInterrupt:
                 print("Telegram: Shutting down...")
