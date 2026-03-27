@@ -72,8 +72,11 @@ logger.info("Pipeline started", tickers=["BBCA.JK"])
 # OR Manual Trigger
 # python scheduler.py --now
 
-# Manual execution
-python main.py
+# Market Scanner execution
+# python scanner.py --tickers AAPL,TSLA,MSFT --threshold 0.5
+from scanner import MarketScanner
+scanner = MarketScanner()
+results = scanner.scan(["BBCA.JK", "ASII.JK", "TLKM.JK"], threshold=0.3)
 
 # Deployment with PM2
 pm2 start ecosystem.config.js
@@ -190,5 +193,14 @@ pm2 start ecosystem.config.js
 - Audit trail for multi-factor ranking in `logs/universe_selection.log`.
 - Structured JSON output of candidate scores (Volume, Volatility, Trend).
 - Detailed selection reporting for daily session transparency.
+
+## [1.10.0] - 2026-03-27
+
+### Added
+
+- New `MarketScanner` module in `scanner.py`.
+- Threshold-based candidate filtering for targeted watchlists.
+- Integration with `ResearchAgent` for real-time indicator computation.
+- Automated score sorting for immediate prioritization.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

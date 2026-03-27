@@ -132,6 +132,15 @@ The Deployment Module provides institutional process management using PM2.
 - **Resource Limits:** 500MB memory limit with automated restart.
 - **Status:** Production-ready.
 
+## Module Logic: Market Scanner Module
+
+The Market Scanner Module provides lightweight candidate evaluation against scoring thresholds.
+
+- **Logic:** Fetches data -> Computes factors -> Filters by threshold.
+- **Scoring:** Reuses `UniverseManager` multi-factor ensemble (Volume, Volatility, Trend).
+- **Return:** Sorted list of tickers exceeding the `threshold`.
+- **Status:** Production-ready.
+
 ## Core Execution Rules
 
 1. Python: `c:/Users/MP2NE93D/miniconda3/python.exe`.
