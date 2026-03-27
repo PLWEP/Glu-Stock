@@ -57,15 +57,15 @@ class UniverseManager:
                 continue
 
             # 1. Volume Factor (Normalized relative to universe?) - For simplicity, use raw mean
-            volume_factor = data["Volume"].tail(20).mean()
+            volume_factor = data["volume"].tail(20).mean()
             
             # 2. Volatility Factor
-            returns = data["Close"].pct_change()
+            returns = data["close"].pct_change()
             volatility_factor = returns.tail(20).std()
             
             # 3. Trend Factor (Price vs SMA20)
-            sma20 = data["Close"].rolling(20).mean().iloc[-1]
-            last_close = data["Close"].iloc[-1]
+            sma20 = data["close"].rolling(20).mean().iloc[-1]
+            last_close = data["close"].iloc[-1]
             trend_factor = (last_close / sma20) - 1 if sma20 > 0 else 0
 
             scores.append({

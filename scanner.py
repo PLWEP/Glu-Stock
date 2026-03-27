@@ -14,51 +14,55 @@ class MarketScanner:
 
     def scan(self, tickers: List[str], threshold: float = 0.5, start_date: str = "2024-01-01", end_date: str = "2024-03-27") -> List[Dict[str, Any]]:
         """
-        Scans a list of tickers and returns those satisfying the score threshold.
+        Scans a list of tickers and returns the top 5 candidates by score.
         """
         if not tickers:
             return []
 
-        print(f"MarketScanner: Scanning {len(tickers)} candidates with threshold {threshold}...")
+        print(f"MarketScanner: Scanning {len(tickers)} candidates...")
         
         # 1. Prepare Data for UniverseManager
-        # We need a dummy metadata DataFrame for rank_stocks to work natively.
         metadata = pd.DataFrame([{"ticker": t, "sector": "Unknown", "is_bumn": False} for t in tickers])
         
         # 2. Fetch and compute features
-        df_researched = self.research_agent.research(tickers, start_date, end_date)
+        try:
+            df_researched = self.research_agent.research(tickers, start_date, end_date)
+            if df_researched.empty:
+                return []
+        except Exception as e:
+            print(f"MarketScanner Error: Research failed: {e}")
+            return []
         
         # 3. Partition data for ranking
         price_data_dict = {}
         for ticker in tickers:
             try:
+                # If ticker is missing from index or fails, continue to next
                 ticker_data = df_researched.xs(ticker, level="ticker")
                 if not ticker_data.empty:
                     price_data_dict[ticker] = ticker_data
-            except KeyError:
+            except (KeyError, Exception):
                 continue
 
         # 4. Execute Multi-Factor Ranking
-        # Note: UniverseManager.rank_stocks returns (Top Tickers, All Scores Dictionary)
         _, all_scores = self.universe_manager.rank_stocks(
             metadata, 
             price_data_dict, 
-            top_n=len(tickers) # Get all candidate scores
+            top_n=len(tickers)
         )
         
-        # 5. Threshold Filtering and Formatting
+        # 5. Collection and Formatting (No threshold filtering)
         candidates = []
         for ticker, score in all_scores.items():
-            if score >= threshold:
-                candidates.append({
-                    "ticker": ticker,
-                    "score": round(score, 4)
-                })
+            candidates.append({
+                "ticker": ticker,
+                "score": round(score, 4)
+            })
         
-        # Sort by score descending
-        candidates = sorted(candidates, key=lambda x: x["score"], reverse=True)
+        # Sort by score descending and take top 5
+        candidates = sorted(candidates, key=lambda x: x["score"], reverse=True)[:5]
         
-        print(f"MarketScanner: Found {len(candidates)} candidates above threshold.")
+        print(f"Top candidates: {candidates}")
         return candidates
 
 if __name__ == "__main__":

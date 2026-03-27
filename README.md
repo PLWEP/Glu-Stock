@@ -329,5 +329,14 @@ To enable the Telegram bot:
 - Implemented normalized RSI (`(50-RSI)/50`), MACD Sigmoid, and SMA Slope Trend logic.
 - Standardized ensemble weighting: 30% RSI, 30% MACD, 20% Trend, 20% Volume.
 - Updated signal mapping to continuous BUY (>0.5) / HOLD logic with high-fidelity logging.
+
+## [1.25.0] - 2026-03-27
+
+### Changed
+
+- Refactored `MarketScanner` to a competitive Top-N selection model (top 5 candidates).
+- Removed binary threshold filtering to ensure system output visibility on every scan.
+- Hardened scanner loop with resilient try-except blocks for per-ticker data gaps.
+- Standardized `UniverseManager` to lowercase column schema for pipeline consistency.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.
