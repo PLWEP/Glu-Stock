@@ -297,5 +297,13 @@ To enable the Telegram bot:
 - Strict debug logging in `telegram_bot.py` for API interaction traceability.
 - Standalone connectivity test mode (`python telegram_bot.py --test`).
 - Full error reporting for failed Telegram messaging attempts.
+
+## [1.21.0] - 2026-03-27
+
+### Fixed
+
+- Strict reporting logic in `TextReportGenerator` to ensure messages are never empty.
+- Added mandatory timestamps and portfolio valuation to all periodic reports.
+- Implemented explicit "No trades executed" fallback message for zero-activity periods.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

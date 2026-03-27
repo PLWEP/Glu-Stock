@@ -15,46 +15,52 @@ class TextReportGenerator:
 
     def generate_report(self, days: int, interval_name: str) -> str:
         """
-        Generic generator for periodic reports.
+        Generic generator for periodic reports with strict fallback requirements.
         """
         now = datetime.now()
         start_period = now - timedelta(days=days)
+        timestamp_str = now.strftime('%Y-%m-%d %H:%M:%S')
         
-        # 1. Fetch and Filter Data
-        all_trades = self.db.get_all_trades()
-        all_snaps = self.db.get_portfolio_history()
-        
-        # Filter trades by entry_date (ISO format)
-        period_trades = [
-            t for t in all_trades 
-            if datetime.fromisoformat(t['entry_date']) >= start_period
-        ]
-        
-        # Filter snapshots by date (ISO format)
-        period_snaps = [
-            s for s in all_snaps 
-            if datetime.fromisoformat(s['date']) >= start_period
-        ]
+        try:
+            # 1. Fetch and Filter Data
+            all_trades = self.db.get_all_trades()
+            all_snaps = self.db.get_portfolio_history()
+            
+            # Filter trades by entry_date (ISO format)
+            period_trades = [
+                t for t in all_trades 
+                if datetime.fromisoformat(t['entry_date']) >= start_period
+            ]
+            
+            # Filter snapshots by date (ISO format)
+            period_snaps = [
+                s for s in all_snaps 
+                if datetime.fromisoformat(s['date']) >= start_period
+            ]
 
-        if not period_snaps:
-            return f"📊 *Glu-Stock {interval_name} Report* 📊\n❌ No data found for the last {days} days."
+            # 2. Base Header
+            msg = f"📊 *{interval_name.upper()} REPORT*\n"
+            msg += f"🕒 Generated: {timestamp_str}\n"
 
-        # 2. Calculate Metrics
-        metrics = calculate_performance_metrics(period_trades, period_snaps)
-        
-        # 3. Format Message
-        latest_snap = period_snaps[0] # History is DESC, so first is latest
-        msg = f"📊 *Glu-Stock {interval_name} Report* 📊\n"
-        msg += f"📅 Period: {start_period.strftime('%Y-%m-%d')} to {now.strftime('%Y-%m-%d')}\n"
-        msg += f"💰 Equity: IDR {latest_snap['equity']:,.2f}\n"
-        msg += f"📈 Return: {metrics['total_return']*100:.2f}%\n"
-        msg += f"🎯 Win Rate: {metrics['win_rate']*100:.1f}%\n"
-        msg += f"📉 Max Drawdown: {metrics['max_drawdown']*100:.1f}%\n"
-        
-        # Recent trades list
-        if period_trades:
+            # 3. Portfolio Value Logic
+            latest_equity = 0.0
+            if all_snaps:
+                latest_equity = all_snaps[0]['equity']
+                msg += f"💰 Portfolio Value: IDR {latest_equity:,.2f}\n"
+
+            # 4. Handle Empty Trades Case
+            if not period_trades:
+                msg += "\nNo trades executed today.\n\nSystem is running normally."
+                return msg
+
+            # 5. Full Report Logic (If Trades Exist)
+            metrics = calculate_performance_metrics(period_trades, period_snaps if period_snaps else all_snaps[:1])
+            
+            msg += f"📈 Return: {metrics['total_return']*100:.2f}%\n"
+            msg += f"🎯 Win Rate: {metrics['win_rate']*100:.1f}%\n"
+            msg += f"📉 Max Drawdown: {metrics['max_drawdown']*100:.1f}%\n"
+            
             msg += f"\n✅ *Trades ({len(period_trades)})*:\n"
-            # Show top 5 for daily, top 10 for weekly/monthly
             limit = 5 if days <= 1 else 10
             for t in period_trades[:limit]:
                 status_icon = "🟢" if t['status'] == 'CLOSED' else "⚪"
@@ -63,10 +69,11 @@ class TextReportGenerator:
             
             if len(period_trades) > limit:
                 msg += f"_...and {len(period_trades)-limit} more_"
-        else:
-            msg += "\n⚪ *No execution signals detected this period.*"
 
-        return msg
+            return msg
+
+        except Exception as e:
+            return f"📊 *{interval_name.upper()} REPORT*\n🕒 {timestamp_str}\n❌ ERROR: {str(e)}"
 
     def generate_daily_report(self) -> str:
         return self.generate_report(1, "Daily")
