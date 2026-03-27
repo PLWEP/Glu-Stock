@@ -153,6 +153,15 @@ The Performance Module calculates institutional-grade trading metrics from reali
 - **Efficiency:** Vectorized calculations for speed across all environments.
 - **Status:** Production-ready.
 
+## Module Logic: Text Report Module
+
+The Text Report Module generates human-readable Markdown summaries for Telegram.
+
+- **Periods:** Daily, Weekly, Monthly.
+- **Metrics:** Equity, Total Return, Win Rate, Max Drawdown, and recent trades list.
+- **Formatting:** Optimized for mobile display with clean emojis and Markdown.
+- **Status:** Production-ready.
+
 ## Module Logic: Telegram Integration Module
 
 The Telegram Integration Module provides real-time monitoring and control of the trading engine.

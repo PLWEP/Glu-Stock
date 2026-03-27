@@ -257,5 +257,13 @@ To enable the Telegram bot:
 - Centralized `utils/performance.py` for advanced metrics calculation.
 - Support for Win Rate, Total Return, and Max Drawdown analysis.
 - Robust handling of empty data and zero-capital edge cases.
+
+## [1.16.0] - 2026-03-27
+
+### Added
+
+- Centralized `utils/text_report.py` for Telegram-friendly reporting.
+- Automated generation of Daily, Weekly, and Monthly performance summaries.
+- Enhanced reporting with emojis and formatted trade logs.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

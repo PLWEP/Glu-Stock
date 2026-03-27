@@ -9,6 +9,6 @@ trading:
         - GOTO.JK
 
 telegram:
-    enabled: false # Set to true to enable bot
-    bot_token: "YOUR_BOT_TOKEN_HERE"
-    chat_id: "YOUR_CHAT_ID_HERE"
+    enabled: true # Set to true to enable bot
+    bot_token: "8274271189:AAEwi4xE80n9mDmPguCDEtX91GQzh09NiPc"
+    chat_id: "603041435"
