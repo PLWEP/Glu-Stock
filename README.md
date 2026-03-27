@@ -32,6 +32,11 @@ backtester = VectorizedBacktester(transaction_cost=0.001)
 results_df = backtester.run_backtest(signals_df)
 metrics = backtester.get_metrics()
 print(metrics)
+
+from portfolio.portfolio import Portfolio
+p = Portfolio(initial_cash=100000)
+p.update_position("AAPL", 10, 150, "BUY")
+print(p.get_total_pnl({"AAPL": 160}))
 ```
 
 ## Project Structure
@@ -40,5 +45,6 @@ print(metrics)
 - `features/`: Technical indicator engineering.
 - `strategies/`: Trading strategies and signal generation.
 - `backtesting/`: Vectorized backtesting engine and performance metrics.
+- `portfolio/`: Portfolio management and PnL tracking.
 - `execution/`: Order execution.
 - `reporting/`: Performance reporting.

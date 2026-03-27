@@ -13,6 +13,31 @@ The Data Module is responsible for fetching and caching OHLCV data.
 - **Data Integrity:** Fully verified with tests (NaN checks, multi-ticker support).
 - **Status:** Production-ready.
 
+## Module Logic: Strategy Module
+
+The Strategy Module generates trading signals using rule-based (RSI, MACD) and optional ML-based logic.
+
+- **Rule-based:** RSI < 30 (BUY), RSI > 70 (SELL), and MACD crossovers.
+- **Aggregation:** Combined signal (-1, 0, 1) and confidence (0-1).
+- **Status:** Production-ready.
+
+## Module Logic: Backtest Module
+
+The Backtest Module simulates trading strategies using vectorized execution for performance.
+
+- **Engine:** Vectorized backtesting (Group-by ticker).
+- **Costs:** Configurable transaction costs (slippage/commission).
+- **Metrics:** Sharpe Ratio, Max Drawdown, Total Return.
+- **Status:** Production-ready.
+
+## Module Logic: Portfolio Module
+
+The Portfolio Module tracks active positions, cash balances, and calculates performance metrics like PnL and Equity.
+
+- **Tracking:** Real-time cash and asset positions (shares, average cost).
+- **PnL:** Supports realized and unrealized PnL calculation.
+- **Status:** Production-ready.
+
 ## Module Logic: Feature Module
 
 The Feature Module computes technical indicators while ensuring zero lookahead bias and multi-ticker isolation.
