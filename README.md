@@ -320,5 +320,14 @@ To enable the Telegram bot:
 
 - Temporarily lowered bullish strategy threshold to `0.5` (from 0.7) to ensure trade execution during testing.
 - Added real-time per-ticker score logging in `TradingStrategy`.
+
+## [1.24.0] - 2026-03-27
+
+### Refactored
+
+- Transitioned `TradingStrategy` to a continuous scoring system.
+- Implemented normalized RSI (`(50-RSI)/50`), MACD Sigmoid, and SMA Slope Trend logic.
+- Standardized ensemble weighting: 30% RSI, 30% MACD, 20% Trend, 20% Volume.
+- Updated signal mapping to continuous BUY (>0.5) / HOLD logic with high-fidelity logging.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.
