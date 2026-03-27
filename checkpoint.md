@@ -92,6 +92,15 @@ The Scheduler Module automates the execution of the trading pipeline.
 - **Integration:** Coordinates `ConfigLoader`, `PipelineOrchestrator`, and `JsonLogger`.
 - **Status:** Production-ready.
 
+## Module Logic: Persistence Module
+
+The Persistence Module manages long-term storage of trading data using SQLite.
+
+- **Database:** `data/trading.db`.
+- **Tables:** `trades` for execution history, `portfolio_history` for equity tracking.
+- **Resilience:** Explicit connection management for Windows compatibility.
+- **Status:** Production-ready.
+
 ## Module Logic: Agents Module
 
 The Agents Module provides an orchestration layer using a multi-agent system.

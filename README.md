@@ -71,6 +71,10 @@ logger.info("Pipeline started", tickers=["BBCA.JK"])
 # python scheduler.py --loop
 # OR Manual Trigger
 # python scheduler.py --now
+
+from data.database import TradingDatabase
+db = TradingDatabase()
+db.record_trade("BBCA.JK", "BUY", 100, 10000)
 ```
 
 ## Project Structure
@@ -131,4 +135,13 @@ logger.info("Pipeline started", tickers=["BBCA.JK"])
 - Support for weekday execution at 09:00 AM using the `schedule` library.
 - CLI interface with `--now` (manual trigger) and `--loop` (daemon mode).
 - Integration with `PipelineOrchestrator` for end-to-end automation.
+
+## [1.4.0] - 2026-03-27
+
+### Added
+
+- Persistent SQLite storage layer in `data/database.py`.
+- Automated schema creation for `trades` and `portfolio_history`.
+- High-integrity transaction management for cross-platform reliability.
+- Support for historical execution and performance auditing.
 - Standalone report exports with embedded assets.
