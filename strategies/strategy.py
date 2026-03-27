@@ -33,10 +33,19 @@ class TradingStrategy:
             df['final_score'] = df['comp_score']
         
         # 5. Map back to discrete signals
-        # BULLISH: score > 0.7 | BEARISH: score < 0.3
+        # BULLISH: score > 0.5 | BEARISH: score < 0.3
         df['final_signal'] = 0
-        df.loc[df['final_score'] > 0.7, 'final_signal'] = 1
+        df.loc[df['final_score'] > 0.5, 'final_signal'] = 1 # Lowered from 0.7 for DEBUG
         df.loc[df['final_score'] < 0.3, 'final_signal'] = -1
+
+        # TEMPORARY DEBUG LOGGING
+        if not df.empty:
+            try:
+                ticker = df.index.get_level_values('ticker')[-1]
+                score = df['final_score'].iloc[-1]
+                print(f"Strategy: {ticker} score: {score:.4f}")
+            except Exception:
+                pass
         
         return df
 

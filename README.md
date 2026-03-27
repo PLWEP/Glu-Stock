@@ -313,5 +313,12 @@ To enable the Telegram bot:
 - Debug functions `count_trades()` and `count_open_positions()` to `TradingDatabase`.
 - Real-time transaction logging with total trade counters in `insert_trade` and `update_trade_close`.
 - Enhanced exception handling in database operations to prevent silent failures.
+
+## [1.23.0] - 2026-03-27
+
+### Changed (DEBUG MODE)
+
+- Temporarily lowered bullish strategy threshold to `0.5` (from 0.7) to ensure trade execution during testing.
+- Added real-time per-ticker score logging in `TradingStrategy`.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.
