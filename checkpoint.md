@@ -38,6 +38,15 @@ The Portfolio Module tracks active positions, cash balances, and calculates perf
 - **PnL:** Supports realized and unrealized PnL calculation.
 - **Status:** Production-ready.
 
+## Module Logic: Execution Module
+
+The Execution Engine translates strategy signals into portfolio actions and maintains a trade log.
+
+- **Paper Trading:** Long-only execution of BUY/SELL signals.
+- **Logging:** Detailed CSV logging in `execution/trade_log.csv`.
+- **Integration:** Directly updates the `Portfolio` instance.
+- **Status:** Production-ready.
+
 ## Module Logic: Feature Module
 
 The Feature Module computes technical indicators while ensuring zero lookahead bias and multi-ticker isolation.

@@ -35,7 +35,10 @@ print(metrics)
 
 from portfolio.portfolio import Portfolio
 p = Portfolio(initial_cash=100000)
-p.update_position("AAPL", 10, 150, "BUY")
+
+from execution.execution import ExecutionEngine
+engine = ExecutionEngine()
+engine.execute_signals(signals_df, p)
 print(p.get_total_pnl({"AAPL": 160}))
 ```
 
@@ -46,5 +49,5 @@ print(p.get_total_pnl({"AAPL": 160}))
 - `strategies/`: Trading strategies and signal generation.
 - `backtesting/`: Vectorized backtesting engine and performance metrics.
 - `portfolio/`: Portfolio management and PnL tracking.
-- `execution/`: Order execution.
+- `execution/`: Paper trading engine and trade logging.
 - `reporting/`: Performance reporting.
