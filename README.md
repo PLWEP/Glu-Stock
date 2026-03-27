@@ -45,6 +45,16 @@ rm = RiskManager()
 shares = rm.calculate_position_size(p.get_equity({"AAPL": 160}), 160, 0.05)
 print(f"Risk-adjusted shares: {shares}")
 print(p.get_total_pnl({"AAPL": 160}))
+
+from agents.agents import ResearchAgent, StrategyAgent, TradingAgent
+ra = ResearchAgent()
+sa = StrategyAgent()
+ta = TradingAgent()
+
+data = ra.research(["AAPL"], "2024-01-01", "2024-03-01")
+signals = sa.get_recommendations(data)
+ta.trade(signals)
+print(ta.get_status({"AAPL": 180}))
 ```
 
 ## Project Structure
@@ -56,4 +66,5 @@ print(p.get_total_pnl({"AAPL": 160}))
 - `portfolio/`: Portfolio management and PnL tracking.
 - `execution/`: Paper trading engine and trade logging.
 - `risk/`: Risk management and position sizing.
+- `agents/`: Multi-agent orchestration layer.
 - `reporting/`: Performance reporting.

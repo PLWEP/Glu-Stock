@@ -56,6 +56,15 @@ The Feature Module computes technical indicators while ensuring zero lookahead b
 - **Data Integrity:** Group-by-ticker processing to prevent data leakage.
 - **Status:** Production-ready.
 
+## Module Logic: Agents Module
+
+The Agents Module provides an orchestration layer using a multi-agent system.
+
+- **ResearchAgent:** Orchestrates data fetching and feature engineering.
+- **StrategyAgent:** Handles signal generation and backtesting.
+- **TradingAgent:** Coordinates risk-managed execution and portfolio state.
+- **Status:** Production-ready.
+
 ## Core Execution Rules
 
 1. Python: `c:/Users/MP2NE93D/miniconda3/python.exe`.
