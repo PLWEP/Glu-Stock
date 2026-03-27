@@ -21,54 +21,69 @@ class PipelineOrchestrator:
         self.results = {"success": [], "failure": []}
 
     def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: str = "2024-01-01", end_date: str = "2024-03-27") -> Dict[str, Any]:
-        """ Executes the full pipeline for a list of tickers (dynamic or manual). """
+        """ Executes the full pipeline with strict telemetry and reporting enforcement. """
         
-        # 1. Dynamic Universe Selection
-        if tickers is None:
-            print(f"Orchestrator: No tickers provided. Selecting top {max_stocks} dynamically...")
-            tickers = self.universe_agent.select_universe(max_stocks, start_date, end_date)
-            
-        if not tickers:
-            print("Orchestrator: No tickers selected. Aborting pipeline.")
-            return {"error": "Empty universe"}
-
-        print(f"Orchestrator: Starting full pipeline for {len(tickers)} tickers...")
-        
+        # 1. Initialization and Universe Selection
+        scanned_count = 0
+        candidate_count = 0
+        trade_count = 0
         all_data = []
 
+        if tickers is None:
+            print(f"Orchestrator: Selecting top {max_stocks} dynamically...")
+            tickers = self.universe_agent.select_universe(max_stocks, start_date, end_date)
+            
+        tickers = tickers or []
+        scanned_count = len(tickers)
+        print(f"Orchestrator: [STEP 1/3] Scanned {scanned_count} tickers.")
+
+        # 2. Sequential Processing
         for ticker in tickers:
-            print(f"---\nOrchestrator: Processing ticker [{ticker}]...")
+            print(f"---\nOrchestrator: Processing [{ticker}]...")
             try:
-                # 2. Research (Fetch & Feature)
+                # A. Research
                 df = self.research_agent.research([ticker], start_date, end_date)
+                if df.empty:
+                    continue
                 
-                # 2. Strategy (Signals)
+                # B. Strategy & Candidate Logic
                 df = self.strategy_agent.get_recommendations(df)
+                if not df.empty and df['final_signal'].iloc[-1] == 1:
+                    candidate_count += 1
                 
-                # 3. Execution (Trading & Risk)
+                # C. Execution
+                # Check current trade count via database/state if needed, here we simplify to success tracking
                 self.trading_agent.trade(df)
+                trade_count += 1 # Increment on attempt, more granular tracking available in TradingAgent
                 
-                # 4. Success Tracking
+                # D. Success Tracking
                 self.results["success"].append(ticker)
                 all_data.append(df)
-                print(f"Orchestrator: [{ticker}] processed successfully.")
                 
             except Exception as e:
-                print(f"Orchestrator: Error processing ticker [{ticker}]: {str(e)}")
+                print(f"Orchestrator: Error processing [{ticker}]: {str(e)}")
                 self.results["failure"].append({"ticker": ticker, "error": str(e)})
 
-        # 5. Reporting
+        print(f"---\nOrchestrator: [STEP 2/3] Found {candidate_count} candidates.")
+        print(f"Orchestrator: [STEP 3/3] Processed {trade_count} execution attempts.")
+
+        # 3. Forced Reporting (Always Runs)
+        print("Orchestrator: Finalizing session and forced reporting...")
         final_summary = self._consolidate_results(all_data)
         self._generate_final_report(final_summary)
-        
-        # Telegram Daily Report
         self._send_telegram_summary(final_summary)
         
         return final_summary
 
     def _send_telegram_summary(self, summary: Dict[str, Any]):
-        """ Sends high-impact session summary to Telegram using TextReportGenerator. """
-        report = TextReportGenerator().generate_daily_report()
+        """ Sends high-impact session summary to Telegram with robust fallback. """
+        try:
+            report = TextReportGenerator().generate_daily_report()
+            if not report or "Report" not in report: # Crude check for empty/missing components
+                report = "⚠️ WARNING: Report empty"
+        except Exception as e:
+            report = f"❌ ERROR: Failed to generate report: {str(e)}"
+        
         send_telegram_alert(report)
 
     def _consolidate_results(self, all_dfs: List[pd.DataFrame]) -> Dict[str, Any]:

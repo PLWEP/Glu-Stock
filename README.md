@@ -281,5 +281,13 @@ To enable the Telegram bot:
 - Multi-timeframe strategy support for `daily`, `weekly`, `monthly`, and `yearly` intervals.
 - Specialized factor weighting logic tailored for different investment horizons.
 - Strict "no lookahead bias" enforcement across all timeframes.
+
+## [1.19.0] - 2026-03-27
+
+### Added
+
+- Strict telemetry logging in `PipelineOrchestrator` (Scanned, Candidates, Executed).
+- Forced reporting protocol ensuring daily reports are sent regardless of activity levels.
+- Robust fallback and error handling for Telegram report generation.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.
