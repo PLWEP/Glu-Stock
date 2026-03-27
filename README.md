@@ -22,13 +22,17 @@ df = handler.fetch_data(['AAPL', 'MSFT'], '2023-01-01', '2023-12-31')
 engineer = FeatureEngineer()
 featured_df = engineer.add_indicators(df)
 featured_df = engineer.clean_features(featured_df)
+
+from strategies.strategy import TradingStrategy
+strategy = TradingStrategy()
+signals_df = strategy.generate_signals(featured_df)
 ```
 
 ## Project Structure
 
 - `data/`: Data fetching and caching.
 - `features/`: Technical indicator engineering.
-- `strategies/`: Trading strategies.
+- `strategies/`: Trading strategies and signal generation.
 - `backtesting/`: Backtesting engine.
 - `execution/`: Order execution.
 - `reporting/`: Performance reporting.
