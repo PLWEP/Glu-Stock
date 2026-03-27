@@ -66,6 +66,11 @@ print(f"Trading with {config['capital']} capital on {config['tickers']}")
 from utils.logger import JsonLogger
 logger = JsonLogger()
 logger.info("Pipeline started", tickers=["BBCA.JK"])
+
+# Run Automation
+# python scheduler.py --loop
+# OR Manual Trigger
+# python scheduler.py --now
 ```
 
 ## Project Structure
@@ -117,4 +122,13 @@ logger.info("Pipeline started", tickers=["BBCA.JK"])
 - Dual output to console and `logs/trading.log`.
 - Support for `INFO` and `ERROR` levels with arbitrary metadata.
 - Automated log directory creation.
+
+## [1.3.0] - 2026-03-27
+
+### Added
+
+- Automated trading scheduler in `scheduler.py`.
+- Support for weekday execution at 09:00 AM using the `schedule` library.
+- CLI interface with `--now` (manual trigger) and `--loop` (daemon mode).
+- Integration with `PipelineOrchestrator` for end-to-end automation.
 - Standalone report exports with embedded assets.

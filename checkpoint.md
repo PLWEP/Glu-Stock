@@ -83,6 +83,15 @@ The Logging Module provides structured JSON logging for auditability.
 - **Levels:** Support for `INFO` and `ERROR`.
 - **Status:** Production-ready.
 
+## Module Logic: Scheduler Module
+
+The Scheduler Module automates the execution of the trading pipeline.
+
+- **Timing:** Every weekday Monday-Friday at 09:00 AM.
+- **Triggers:** Supports both background loop (`--loop`) and immediate manual trigger (`--now`).
+- **Integration:** Coordinates `ConfigLoader`, `PipelineOrchestrator`, and `JsonLogger`.
+- **Status:** Production-ready.
+
 ## Module Logic: Agents Module
 
 The Agents Module provides an orchestration layer using a multi-agent system.
