@@ -144,6 +144,15 @@ The Market Scanner Module provides lightweight candidate evaluation against scor
 - **Return:** Sorted list of tickers exceeding the `threshold`.
 - **Status:** Production-ready.
 
+## Module Logic: Performance Module
+
+The Performance Module calculates institutional-grade trading metrics from realized trades and portfolio snapshots.
+
+- **Metrics:** Win Rate, Total Return, Average Win/Loss, Max Drawdown.
+- **Resilience:** Built-in guards for empty data and zero-capital scenarios.
+- **Efficiency:** Vectorized calculations for speed across all environments.
+- **Status:** Production-ready.
+
 ## Module Logic: Telegram Integration Module
 
 The Telegram Integration Module provides real-time monitoring and control of the trading engine.

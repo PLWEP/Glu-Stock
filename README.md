@@ -249,5 +249,13 @@ To enable the Telegram bot:
 - Implemented `trades` table with entry/exit, qty, pnl, status, strategy, and timeframe.
 - Implemented `portfolio_snapshots` table with `positions_value` support.
 - Added institutional-grade trade lifecycle functions: `insert_trade`, `update_trade_close`.
+
+## [1.15.0] - 2026-03-27
+
+### Added
+
+- Centralized `utils/performance.py` for advanced metrics calculation.
+- Support for Win Rate, Total Return, and Max Drawdown analysis.
+- Robust handling of empty data and zero-capital edge cases.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.
