@@ -101,6 +101,16 @@ The Persistence Module manages long-term storage of trading data using SQLite.
 - **Resilience:** Explicit connection management for Windows compatibility.
 - **Status:** Production-ready.
 
+## Module Logic: Universe Selection Module
+
+The Universe Selection Module manages the dynamic pool of tradable stocks for the IDX market.
+
+- **Data Source:** `data/idx_stocks.csv` (Ticker, Sector, BUMN status).
+- **Filtering:** Automatically excludes Financials and BUMN stocks.
+- **Ranking:** Weighted ensemble scoring (Volume 40%, Volatility 30%, Trend 30%).
+- **Selection:** Returns the Top N stocks for the trading pipeline.
+- **Status:** Production-ready.
+
 ## Module Logic: Agents Module
 
 The Agents Module provides an orchestration layer using a multi-agent system.

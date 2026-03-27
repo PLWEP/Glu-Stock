@@ -1,0 +1,11 @@
+ticker,name,sector,is_bumn
+BBCA.JK,BCA,Financials,false
+TLKM.JK,Telkom,Communication,true
+ASII.JK,Astra,Industrials,false
+BMRI.JK,Mandiri,Financials,true
+GOTO.JK,GoTo,Technology,false
+UNVR.JK,Unilever,Consumer Staples,false
+BBRI.JK,BRI,Financials,true
+ADRO.JK,Adaro,Energy,false
+PTBA.JK,Bukit Asam,Energy,true
+ICBP.JK,Indofood,Consumer Staples,false

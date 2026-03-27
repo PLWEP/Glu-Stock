@@ -72,9 +72,9 @@ logger.info("Pipeline started", tickers=["BBCA.JK"])
 # OR Manual Trigger
 # python scheduler.py --now
 
-from data.database import TradingDatabase
-db = TradingDatabase()
-db.record_trade("BBCA.JK", "BUY", 100, 10000)
+from data.universe import UniverseManager
+mgr = UniverseManager()
+rankings = mgr.rank_stocks(mgr.filter_excluded_stocks(mgr.get_idx_tickers()), price_data)
 ```
 
 ## Project Structure
@@ -144,4 +144,13 @@ db.record_trade("BBCA.JK", "BUY", 100, 10000)
 - Automated schema creation for `trades` and `portfolio_history`.
 - High-integrity transaction management for cross-platform reliability.
 - Support for historical execution and performance auditing.
+
+## [1.5.0] - 2026-03-27
+
+### Added
+
+- Universe selection engine in `data/universe.py`.
+- Metadata-driven IDX universe management via `data/idx_stocks.csv`.
+- Strategic filtering logic (Bank/BUMN exclusion).
+- Multi-factor ranking system (Volume, Volatility, Trend).
 - Standalone report exports with embedded assets.
