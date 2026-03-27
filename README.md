@@ -26,6 +26,12 @@ featured_df = engineer.clean_features(featured_df)
 from strategies.strategy import TradingStrategy
 strategy = TradingStrategy()
 signals_df = strategy.generate_signals(featured_df)
+
+from backtesting.backtest import VectorizedBacktester
+backtester = VectorizedBacktester(transaction_cost=0.001)
+results_df = backtester.run_backtest(signals_df)
+metrics = backtester.get_metrics()
+print(metrics)
 ```
 
 ## Project Structure
@@ -33,6 +39,6 @@ signals_df = strategy.generate_signals(featured_df)
 - `data/`: Data fetching and caching.
 - `features/`: Technical indicator engineering.
 - `strategies/`: Trading strategies and signal generation.
-- `backtesting/`: Backtesting engine.
+- `backtesting/`: Vectorized backtesting engine and performance metrics.
 - `execution/`: Order execution.
 - `reporting/`: Performance reporting.
