@@ -78,9 +78,20 @@ from scanner import MarketScanner
 scanner = MarketScanner()
 results = scanner.scan(["BBCA.JK", "ASII.JK", "TLKM.JK"], threshold=0.3)
 
+# Telegram Bot execution
+python telegram_bot.py
+
 # Deployment with PM2
 pm2 start ecosystem.config.js
 ```
+
+## Telegram Integration
+
+To enable the Telegram bot:
+
+1. Create a bot via [@BotFather](https://t.me/BotFather) and get the token.
+2. Get your Chat ID via [@userinfobot](https://t.me/userinfobot).
+3. Update `config.yaml` with your credentials and set `enabled: true`.
 
 ## Project Structure
 
@@ -211,5 +222,14 @@ pm2 start ecosystem.config.js
 - Continuous composite score (0-1) replacing discrete rule-based signals.
 - Weighted ensemble: RSI (30%), MACD (30%), Trend (20%), and Volume (20%).
 - Signal thresholding (>0.7 BUY, <0.3 SELL) for execution compatibility.
+
+## [1.12.0] - 2026-03-27
+
+### Added
+
+- Standalone Telegram Bot in `telegram_bot.py`.
+- Support for `/status` and `/portfolio` commands via Telegram Bot API.
+- Real-time monitoring of engine health and portfolio snapshots.
+- Lightweight polling architecture using the `requests` library.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

@@ -142,6 +142,15 @@ The Market Scanner Module provides lightweight candidate evaluation against scor
 - **Return:** Sorted list of tickers exceeding the `threshold`.
 - **Status:** Production-ready.
 
+## Module Logic: Telegram Integration Module
+
+The Telegram Integration Module provides real-time monitoring and control of the trading engine.
+
+- **Bot Commands:** `/status` for engine health, `/portfolio` for real-time asset tracking.
+- **Provider:** Standalone bot using Telegram Bot API (Long Polling).
+- **Data Source:** Direct integration with `TradingDatabase` and system logs.
+- **Status:** Production-ready.
+
 ## Core Execution Rules
 
 1. Python: `c:/Users/MP2NE93D/miniconda3/python.exe`.
