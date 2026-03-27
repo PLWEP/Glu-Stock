@@ -9,92 +9,84 @@ class TradingStrategy:
 
     def generate_signals(self, df: pd.DataFrame, model: Optional[object] = None, features: Optional[List[str]] = None) -> pd.DataFrame:
         """
-        Generates combined signals and confidence scores.
+        Generates combined signals based on composite multi-factor scoring.
+        Returns 'final_score' (0-1) and 'final_signal' (-1, 0, 1).
         """
         if df.empty:
             return df
         
-        # 1. Rule-based signals
-        df = self._generate_rule_signals(df)
+        # 1. Compute individual factor scores (0-1)
+        df = self._compute_factor_scores(df)
         
-        # 2. ML signals (if model is provided)
+        # 2. Combine into composite score
+        df = self._compute_composite_score(df)
+        
+        # 3. Handle ML signals (if model is provided)
         if model and features:
             df = self._generate_ml_signals(df, model, features)
+            # 50/50 blend between technical composite and ML confidence
+            df['final_score'] = (df['comp_score'] + df['ml_confidence'] * df['ml_signal'].clip(0, 1)) / 2
         else:
-            df['ml_signal'] = 0
-            df['ml_confidence'] = 0.0
+            df['final_score'] = df['comp_score']
         
-        # 3. Aggregate signals
-        df = self._aggregate_signals(df)
+        # 4. Map back to discrete signals for legacy execution engines
+        # BULLISH: score > 0.7 | BEARISH: score < 0.3
+        df['final_signal'] = 0
+        df.loc[df['final_score'] > 0.7, 'final_signal'] = 1
+        df.loc[df['final_score'] < 0.3, 'final_signal'] = -1
         
         return df
 
-    def _generate_rule_signals(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Rule-based logic: RSI and MACD."""
-        # RSI Logic
-        df['rsi_signal'] = 0
-        df.loc[df['rsi'] < 30, 'rsi_signal'] = 1  # Buy
-        df.loc[df['rsi'] > 70, 'rsi_signal'] = -1 # Sell
+    def _compute_factor_scores(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Calculates normalized factor components (0-1). """
+        # A. RSI Score: 30 (1.0) -> 70 (0.0)
+        df['s_rsi'] = np.clip((70 - df['rsi']) / 40, 0, 1)
         
-        # MACD Logic: Detect crossover
-        # We need to shift to find crossover: (prev_macd < prev_signal) AND (curr_macd > curr_signal) -> BUY
-        df['macd_prev'] = df.groupby(level='ticker')['macd'].shift(1)
-        df['macd_signal_prev'] = df.groupby(level='ticker')['macd_signal'].shift(1)
-        
-        df['m_cross_up'] = (df['macd_prev'] < df['macd_signal_prev']) & (df['macd'] > df['macd_signal'])
-        df['m_cross_down'] = (df['macd_prev'] > df['macd_signal_prev']) & (df['macd'] < df['macd_signal'])
-        
-        df['macd_signal_rule'] = 0
-        df.loc[df['m_cross_up'], 'macd_signal_rule'] = 1
-        df.loc[df['m_cross_down'], 'macd_signal_rule'] = -1
-        
-        # Cleanup temp columns
-        df.drop(columns=['macd_prev', 'macd_signal_prev', 'm_cross_up', 'm_cross_down'], inplace=True)
-        
+        # B. MACD Score: Based on histogram vs its rolling volatility
+        # Using macd_h (histogram) from FeatureEngineer
+        df['macd_h_std'] = df.groupby(level='ticker')['macd_h'].transform(lambda x: x.rolling(20).std())
+        # Map +/- 2 Std Dev to [0, 1]
+        df['s_macd'] = np.clip((df['macd_h'] / (2 * df['macd_h_std'].replace(0, 1e-6)) + 1) / 2, 0, 1)
+        df['s_macd'] = df['s_macd'].fillna(0.5)
+
+        # C. Trend Score: Price distance from SMA20 (+/- 10% range)
+        df['s_trend'] = np.clip(((df['close'] / df['sma_20']) - 1) / 0.2 + 0.5, 0, 1)
+        df['s_trend'] = df['s_trend'].fillna(0.5)
+
+        # D. Volume Score: Ratio of current volume to 20-day average
+        df['vol_avg_20'] = df.groupby(level='ticker')['volume'].transform(lambda x: x.rolling(20).mean())
+        # Map 0x (0.0) -> 2x (1.0)
+        df['s_vol'] = np.clip(df['volume'] / (2 * df['vol_avg_20'].replace(0, 1)), 0, 1)
+        df['s_vol'] = df['s_vol'].fillna(0.5)
+
+        return df
+
+    def _compute_composite_score(self, df: pd.DataFrame) -> pd.DataFrame:
+        """ Weighted ensemble of technical factors. """
+        # Weights: RSI (30%), MACD (30%), Trend (20%), Volume (20%)
+        df['comp_score'] = (
+            df['s_rsi'] * 0.3 + 
+            df['s_macd'] * 0.3 + 
+            df['s_trend'] * 0.2 + 
+            df['s_vol'] * 0.2
+        )
         return df
 
     def _generate_ml_signals(self, df: pd.DataFrame, model: object, features: List[str]) -> pd.DataFrame:
-        """ML-based logic."""
+        """ML-based prediction integration."""
         try:
-            # Assume Scikit-Learn like interface
             preds = model.predict(df[features])
             if hasattr(model, "predict_proba"):
                 probs = model.predict_proba(df[features])
                 confidence = np.max(probs, axis=1)
             else:
-                confidence = 1.0  # Placeholder if no proba
+                confidence = 1.0
             
             df['ml_signal'] = preds
             df['ml_confidence'] = confidence
-        except Exception as e:
-            print(f"ML prediction error: {e}")
+        except Exception:
             df['ml_signal'] = 0
             df['ml_confidence'] = 0.0
-        return df
-
-    def _aggregate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Combine signals and calculate confidence."""
-        # Weighted aggregate: RSI (0.3), MACD (0.3), ML (0.4) if ML exists.
-        # If no ML, then RSI (0.5), MACD (0.5).
-        
-        has_ml = (df['ml_confidence'] > 0).any()
-        
-        if has_ml:
-            # simple mean for signal if multiple agree, or prioritize ML
-            df['final_signal'] = np.sign(0.3 * df['rsi_signal'] + 0.3 * df['macd_signal_rule'] + 0.4 * df['ml_signal'])
-            df['confidence'] = (0.3 * (df['rsi_signal'] != 0).astype(float) + 
-                                0.3 * (df['macd_signal_rule'] != 0).astype(float) + 
-                                0.4 * df['ml_confidence'])
-        else:
-            # Rule based only
-            df['final_signal'] = np.sign(0.5 * df['rsi_signal'] + 0.5 * df['macd_signal_rule'])
-            df['confidence'] = (0.5 * (df['rsi_signal'] != 0).astype(float) + 
-                                0.5 * (df['macd_signal_rule'] != 0).astype(float))
-        
-        # Standardize final_signal to integers
-        df['final_signal'] = df['final_signal'].fillna(0).astype(int)
-        df['confidence'] = df['confidence'].clip(0, 1.0)
-        
         return df
 
 if __name__ == "__main__":
@@ -111,4 +103,5 @@ if __name__ == "__main__":
     strategy = TradingStrategy()
     df = strategy.generate_signals(df)
     
-    print(df[df['final_signal'] != 0].tail())
+    print("Scoring Sample:")
+    print(df[['close', 'final_score', 'final_signal']].tail(10))

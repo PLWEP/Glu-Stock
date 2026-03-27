@@ -18,7 +18,8 @@ The Data Module is responsible for fetching and caching OHLCV data.
 The Strategy Module generates trading signals using rule-based (RSI, MACD) and optional ML-based logic.
 
 - **Rule-based:** RSI < 30 (BUY), RSI > 70 (SELL), and MACD crossovers.
-- **Aggregation:** Combined signal (-1, 0, 1) and confidence (0-1).
+- **Scoring Engine:** Composite multi-factor score (0-1) combining RSI (30%), MACD (30%), Trend (20%), and Volume (20%).
+- **Aggregation:** Maps composite score to discrete signals (>0.7 for BUY, <0.3 for SELL).
 - **Status:** Production-ready.
 
 ## Module Logic: Backtest Module

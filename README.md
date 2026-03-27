@@ -202,5 +202,14 @@ pm2 start ecosystem.config.js
 - Threshold-based candidate filtering for targeted watchlists.
 - Integration with `ResearchAgent` for real-time indicator computation.
 - Automated score sorting for immediate prioritization.
+
+## [1.11.0] - 2026-03-27
+
+### Added
+
+- Multi-factor strategy scoring engine in `strategies/strategy.py`.
+- Continuous composite score (0-1) replacing discrete rule-based signals.
+- Weighted ensemble: RSI (30%), MACD (30%), Trend (20%), and Volume (20%).
+- Signal thresholding (>0.7 BUY, <0.3 SELL) for execution compatibility.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.
