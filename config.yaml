@@ -1,3 +1,5 @@
+debug_mode: true # Set to true to force trades during testing
+
 trading:
     capital: 100000000 # 100M IDR
     risk_per_trade: 0.02 # 2%

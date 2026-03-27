@@ -347,5 +347,14 @@ To enable the Telegram bot:
 - Implemented `Top-5` selective execution, ignoring binary signal strength for selected candidates.
 - Removed early exit guards to ensure consistency in pipeline lifecycle (Research to Reporting).
 - Added session-end logging for audited selection visibility (`Selected stocks`).
+
+## [1.27.0] - 2026-03-27
+
+### Added
+
+- Implemented global `DEBUG_MODE` toggle in `config.yaml`.
+- Added conditional logic in `TradingStrategy` to bypass scoring thresholds when `DEBUG_MODE` is active.
+- Added adaptive universe selection in `PipelineOrchestrator` to force Top-3 selection in debug mode.
+- Injected high-fidelity debug telemetry to track signal overrides at runtime.
 - Log-integrated selection process for auditability.
 - Standalone report exports with embedded assets.

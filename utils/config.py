@@ -13,7 +13,8 @@ class ConfigLoader:
             "capital": 100000000.0,
             "risk_per_trade": 0.02,
             "tickers": ["BBCA.JK", "TLKM.JK"]
-        }
+        },
+        "debug_mode": True
     }
 
     def __init__(self, config_path: str = "config.yaml"):

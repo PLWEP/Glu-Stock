@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from typing import Optional, List
+from utils.config import ConfigLoader
 
 class TradingStrategy:
     """
@@ -34,15 +35,23 @@ class TradingStrategy:
         # 4. Map back to discrete signals
         # SIGNAL: "BUY" if score > 0.5 else "HOLD"
         df['final_signal'] = 0
-        df.loc[df['final_score'] > 0.5, 'final_signal'] = 1
+        
+        # DEBUG MODE OVERRIDE
+        debug_mode = ConfigLoader().get_config().get('debug_mode', True)
+        if debug_mode:
+            print("Strategy: !! DEBUG MODE ACTIVE !! Bypassing thresholds - Forcing BUY signal.")
+            df['final_signal'] = 1
+        else:
+            df.loc[df['final_score'] > 0.5, 'final_signal'] = 1
         
         # 5. Debug Log
         if not df.empty:
             try:
                 ticker = df.index.get_level_values('ticker')[-1]
                 score = df['final_score'].iloc[-1]
-                signal = "BUY" if score > 0.5 else "HOLD"
-                print(f"Strategy: {ticker} score: {score:.4f} | Signal: {signal}")
+                final_sig = df['final_signal'].iloc[-1]
+                signal_str = "BUY" if final_sig == 1 else "HOLD"
+                print(f"Strategy: {ticker} score: {score:.4f} | Signal: {signal_str} (Score Signal: {'BUY' if score > 0.5 else 'HOLD'})")
             except Exception:
                 pass
 

@@ -5,6 +5,7 @@ from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSe
 from reporting.report import ReportGenerator
 from utils.alerts import send_telegram_alert
 from utils.text_report import TextReportGenerator
+from utils.config import ConfigLoader
 
 class PipelineOrchestrator:
     """
@@ -34,8 +35,16 @@ class PipelineOrchestrator:
             tickers = self.universe_agent.select_universe(max_stocks, start_date, end_date)
             
         tickers = tickers or []
-        # Ensure we only process the top 5 (selected_stocks)
-        selected_stocks = tickers[:5]
+        
+        # DEBUG MODE OVERRIDE
+        debug_mode = ConfigLoader().get_config().get('debug_mode', True)
+        if debug_mode:
+            print("Orchestrator: !! DEBUG MODE ACTIVE !! Forcing Top 3 selection.")
+            selected_stocks = tickers[:3]
+        else:
+            # Ensure we only process the top 5 (selected_stocks)
+            selected_stocks = tickers[:5]
+
         scanned_count = len(tickers)
         print(f"Orchestrator: [STEP 1/3] Scanned {scanned_count} tickers. Selecting Top {len(selected_stocks)}.")
         print(f"Selected stocks: {selected_stocks}")
