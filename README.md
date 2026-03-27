@@ -39,6 +39,11 @@ p = Portfolio(initial_cash=100000)
 from execution.execution import ExecutionEngine
 engine = ExecutionEngine()
 engine.execute_signals(signals_df, p)
+
+from risk.risk import RiskManager
+rm = RiskManager()
+shares = rm.calculate_position_size(p.get_equity({"AAPL": 160}), 160, 0.05)
+print(f"Risk-adjusted shares: {shares}")
 print(p.get_total_pnl({"AAPL": 160}))
 ```
 
@@ -50,4 +55,5 @@ print(p.get_total_pnl({"AAPL": 160}))
 - `backtesting/`: Vectorized backtesting engine and performance metrics.
 - `portfolio/`: Portfolio management and PnL tracking.
 - `execution/`: Paper trading engine and trade logging.
+- `risk/`: Risk management and position sizing.
 - `reporting/`: Performance reporting.
