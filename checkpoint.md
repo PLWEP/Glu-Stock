@@ -74,6 +74,15 @@ The Configuration Module manages externalized trading parameters using YAML.
 - **Safety:** Enforces positive capital and valid risk percentage (0-1).
 - **Status:** Production-ready.
 
+## Module Logic: Logging Module
+
+The Logging Module provides structured JSON logging for auditability.
+
+- **Format:** JSON strings containing timestamp, level, message, and metadata.
+- **Output:** Dual output to console and `logs/trading.log`.
+- **Levels:** Support for `INFO` and `ERROR`.
+- **Status:** Production-ready.
+
 ## Module Logic: Agents Module
 
 The Agents Module provides an orchestration layer using a multi-agent system.

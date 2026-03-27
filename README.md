@@ -61,8 +61,11 @@ summary = orch.run_full_pipeline(["AAPL", "TSLA"], "2024-01-01", "2024-03-01")
 print(f"Workflow Summary: {summary['tickers_processed']}")
 
 from utils.config import ConfigLoader
-config = ConfigLoader().get_trading_params()
 print(f"Trading with {config['capital']} capital on {config['tickers']}")
+
+from utils.logger import JsonLogger
+logger = JsonLogger()
+logger.info("Pipeline started", tickers=["BBCA.JK"])
 ```
 
 ## Project Structure
@@ -105,4 +108,13 @@ print(f"Trading with {config['capital']} capital on {config['tickers']}")
 - `ConfigLoader` utility with robust validation and defaults.
 - Support for externalized capital and risk management.
 - Comprehensive unit tests for the configuration system.
+
+## [1.2.0] - 2026-03-27
+
+### Added
+
+- Structured JSON logging system in `utils/logger.py`.
+- Dual output to console and `logs/trading.log`.
+- Support for `INFO` and `ERROR` levels with arbitrary metadata.
+- Automated log directory creation.
 - Standalone report exports with embedded assets.
