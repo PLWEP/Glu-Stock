@@ -5,7 +5,8 @@ module.exports = {
 			script: "scheduler.py",
 			args: "--loop",
 			// interpreter: "c:/Users/MP2NE93D/miniconda3/python.exe", // Windows PATH
-			interpreter: "python", // Standard for Termux/Linux
+			// interpreter: "python", // Standard for Termux/Linux
+			interpreter: "./glustock_venv/bin/python",
 			instances: 1,
 			autorestart: true,
 			watch: false,
@@ -19,7 +20,8 @@ module.exports = {
 		{
 			name: "glu-stock-bot",
 			script: "telegram_bot.py",
-			interpreter: "python",
+			// interpreter: "python",
+			interpreter: "./glustock_venv/bin/python",
 			autorestart: true,
 			max_memory_restart: "200M",
 			env: {

@@ -169,12 +169,18 @@ class TelegramBot:
             print("Telegram: Bot is disabled in config. To enable, set 'enabled: true'.")
             return
 
+        self.logger.info(f"Telegram: Bot started polling (Offset: {self.offset})")
         print(f"Telegram: Bot started polling (Offset: {self.offset})...")
         while True:
             try:
+                # self.logger.info("Telegram: Polling for updates...") # Too spammy? Maybe just print
                 url = f"{self.api_url}/getUpdates"
                 params = {"offset": self.offset, "timeout": 30}
                 res = requests.get(url, params=params, timeout=35).json()
+                
+                if res.get("ok") and not res.get("result"):
+                    # Log heartbeat occasionally? Or just stay silent.
+                    pass
                 
                 if res.get("ok"):
                     for update in res.get("result", []):
@@ -196,6 +202,7 @@ class TelegramBot:
                         if not text: continue
                         
                         cmd = text.split()[0].lower()
+                        self.logger.info(f"Telegram: Received [ {cmd} ] from {inc_chat_id}")
                         
                         # Helper to send response back to the sender
                         def reply(msg, markup=None):
