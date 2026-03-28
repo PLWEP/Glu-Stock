@@ -109,7 +109,7 @@ class PipelineOrchestrator:
                     self.logger.info(f"Orchestrator: Signal for {ticker} PASSED audit (WR: {audit_result['win_rate']:.1f}%)")
                     
                     # D. Execution
-                    self.trading_agent.trade(signals)
+                    self.trading_agent.trade(signals, pipeline=pipeline)
                     trade_count += 1
                     candidate_count += 1
                     self.results["success"].append(ticker)
@@ -188,7 +188,7 @@ class PipelineOrchestrator:
                     current_prices[ticker] = df.xs(ticker, level='ticker')['close'].iloc[-1]
 
         # 2. Get Summary
-        summary = self.trading_agent.get_detailed_status(current_prices)
+        summary = self.trading_agent.get_detailed_status(current_prices, pipeline=pipeline)
         
         # 3. Format & Send
         report = self.generate_portfolio_report(summary, pipeline)

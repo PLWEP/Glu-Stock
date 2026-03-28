@@ -29,6 +29,26 @@ class ExecutionEngine:
             writer = csv.writer(f)
             writer.writerow([timestamp, ticker, action, shares, price, status])
 
+    def execute(self, ticker: str, action: str, shares: float, price: float, timestamp: Any = None) -> bool:
+        """ Executes a single trade and logs it. """
+        if timestamp is None:
+            from datetime import datetime
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+            
+        # This method is used by TradingAgent which manages the Portfolio.
+        # It's primarily for logging and telemetry.
+        self._log_trade(timestamp, ticker, action, shares, price, "SUCCESS")
+        
+        # Telegram Alert
+        if action.upper() == "BUY":
+            alert_msg = f"📈 *BUY ORDER EXECUTED*\n*Ticker:* {ticker}\n*Shares:* {shares}\n*Price:* {price:,.2f}"
+            send_telegram_alert(alert_msg)
+        elif action.upper() == "SELL":
+             alert_msg = f"📉 *SELL ORDER EXECUTED*\n*Ticker:* {ticker}\n*Shares:* {shares}\n*Price:* {price:,.2f}"
+             send_telegram_alert(alert_msg)
+             
+        return True
+
     def execute_signals(self, df: pd.DataFrame, portfolio: Portfolio, shares_per_trade: float = 100):
         """
         Processes signals in the DataFrame and executes trades against the Portfolio.

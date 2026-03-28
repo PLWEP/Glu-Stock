@@ -131,57 +131,94 @@ class UniverseSelectionAgent:
         return top_tickers
 
 class TradingAgent:
-    """ Coordinates execution and risk-aware portfolio management. """
-    def __init__(self, initial_cash: float = 100000.0):
-        self.portfolio = Portfolio(initial_cash=initial_cash)
+    """ Coordinates execution and risk-aware portfolio management for multiple strategies. """
+    def __init__(self, initial_cash: float = 100000.0, allocations: Optional[Dict[str, float]] = None):
         self.execution_engine = ExecutionEngine()
         self.risk_manager = RiskManager()
-
-    def trade(self, df: pd.DataFrame, shares_per_trade: Optional[int] = None):
-        """
-        Executes trades based on signals in df. 
-        If shares_per_trade is None, uses 2% risk rule.
-        """
-        print("TradingAgent: Starting execution cycle...")
         
-        # Chronological execution for paper trading
-        df = df.sort_index(level='date')
+        # Default allocations if none provided: 40% Daily, 30% Weekly, 30% Monthly
+        if allocations is None:
+            allocations = {
+                "daily": initial_cash * 0.4, 
+                "weekly": initial_cash * 0.3, 
+                "monthly": initial_cash * 0.3
+            }
+            
+        self.portfolios: Dict[str, Portfolio] = {}
+        for name, cap in allocations.items():
+            p = Portfolio(name=name, initial_cash=cap)
+            # Try to load existing state for continuity
+            if not p.load_state():
+                print(f"TradingAgent: Initializing new portfolio for [{name}] with {cap}")
+                p.save_state()
+            else:
+                print(f"TradingAgent: Loaded existing {name} portfolio state.")
+            self.portfolios[name] = p
+
+    def trade(self, df: pd.DataFrame, pipeline: str = "daily", shares_per_trade: Optional[int] = None):
+        """ Executes trades using the strategy-specific isolated portfolio. """
+        portfolio = self.portfolios.get(pipeline.lower())
+        if not portfolio:
+            print(f"TradingAgent: No portfolio found for pipeline [{pipeline}]")
+            return
+
+        ticker = df.index.get_level_values('ticker')[0] if isinstance(df.index, pd.MultiIndex) else "UNKNOWN"
+        last_row = df.iloc[-1]
+        action = "BUY" if last_row['final_signal'] == 1 else ("SELL" if last_row['final_signal'] == -1 else "HOLD")
         
-        for (timestamp, ticker), row in df.iterrows():
-            current_equity = self.portfolio.get_equity({ticker: row['close']})
-            
-            # Simple wrapper to integrate RiskManager sizing into ExecutionEngine call
-            # We'll calculate sizing here if needed.
-            size = shares_per_trade
-            if size is None:
-                size = self.risk_manager.calculate_position_size(
-                    current_equity, row['close'], 0.05 # Fixed 5% SL for simplicity
-                )
-            
-            # Use ExecutionEngine to update portfolio
-            # Wrapping for a single row
-            single_row_df = pd.DataFrame([row], index=pd.MultiIndex.from_tuples([(timestamp, ticker)], names=['date', 'ticker']))
-            self.execution_engine.execute_signals(single_row_df, self.portfolio, shares_per_trade=size)
+        if action == "HOLD":
+            return
 
-    def get_status(self, current_prices: Dict[str, float]) -> Dict[str, Any]:
-        return {
-            "cash": self.portfolio.cash,
-            "equity": self.portfolio.get_equity(current_prices),
-            "realized_pnl": self.portfolio.realized_pnl,
-            "positions": self.portfolio.positions
-        }
+        # Profit Freezing Enforcement
+        if action == "BUY":
+            # Dynamic sizing: 10% of INITIAL capacity per trade, or user provided shares
+            if shares_per_trade is None:
+                allocation_per_trade = portfolio.initial_capital * 0.1
+                shares = self.risk_manager.calculate_position_size(allocation_per_trade, last_row['close'])
+            else:
+                shares = shares_per_trade
+                
+            # Final check against available cash (Profit Freeze aware)
+            # We only allow buying with cash up to the initial_capital limit
+            max_buy_shares = int(portfolio.available_to_trade / last_row['close'])
+            shares = min(shares, max_buy_shares)
+        else:
+            # SELL logic uses current holdings
+            shares = portfolio.positions.get(ticker, {}).get("shares", 0)
 
-    def get_detailed_status(self, current_prices: Dict[str, float]) -> Dict[str, Any]:
-        """ Generates a 'Security Firm' style portfolio summary. """
+        if shares <= 0: return
+
+        # Execute via Engine
+        success = self.execution_engine.execute(ticker, action, shares, last_row['close'])
+        if success:
+            # Update Portfolio state
+            portfolio.update_position(ticker, shares, last_row['close'], action)
+            # Persist state immediately
+            portfolio.save_state()
+            
+    def get_status(self, current_prices: Dict[str, float], pipeline: Optional[str] = None) -> Any:
+        """ Gets status for one or all portfolios. """
+        if pipeline:
+            p = self.portfolios.get(pipeline.lower())
+            return {"cash": p.cash, "equity": p.get_equity(current_prices), "pnl": p.realized_pnl} if p else {}
+            
+        return {name: {"cash": p.cash, "equity": p.get_equity(current_prices)} for name, p in self.portfolios.items()}
+
+    def get_detailed_status(self, current_prices: Dict[str, float], pipeline: str = "daily") -> Dict[str, Any]:
+        """ Generates a 'Security Firm' style portfolio summary for a specific pipeline. """
+        portfolio = self.portfolios.get(pipeline.lower())
+        if not portfolio: return {}
+
         summary = {
-            "cash": self.portfolio.cash,
-            "equity": self.portfolio.get_equity(current_prices),
-            "realized_pnl": self.portfolio.realized_pnl,
-            "unrealized_pnl": self.portfolio.get_unrealized_pnl(current_prices),
+            "name": pipeline.upper(),
+            "cash": portfolio.cash,
+            "equity": portfolio.get_equity(current_prices),
+            "realized_pnl": portfolio.realized_pnl,
+            "unrealized_pnl": portfolio.get_unrealized_pnl(current_prices),
             "holdings": []
         }
         
-        for ticker, pos in self.portfolio.positions.items():
+        for ticker, pos in portfolio.positions.items():
             last_p = current_prices.get(ticker, pos["avg_cost"])
             shares = pos["shares"]
             avg_p = pos["avg_cost"]

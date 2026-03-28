@@ -1,14 +1,23 @@
-from typing import Dict, Optional
+import json
+import os
+from typing import Dict, Optional, Any
 
 class Portfolio:
     """
     Manages active positions, cash balance, and calculates equity and PnL.
     """
 
-    def __init__(self, initial_cash: float = 100000.0):
+    def __init__(self, name: str, initial_cash: float = 100000.0):
+        self.name = name
+        self.initial_capital = initial_cash
         self.cash = initial_cash
-        self.positions: Dict[str, Dict[str, float]] = {}
+        self.positions: Dict[str, Dict[str, Any]] = {}
         self.realized_pnl = 0.0
+
+    @property
+    def available_to_trade(self) -> float:
+        """ Returns cash available for new BUYS, capped at initial capital (Profit Freezing). """
+        return min(self.cash, self.initial_capital)
 
     def update_position(self, ticker: str, shares: float, price: float, action: str) -> bool:
         """
@@ -54,6 +63,38 @@ class Portfolio:
             
         return False
 
+    def save_state(self, directory: str = "data"):
+        """ Persists portfolio state to a JSON file. """
+        os.makedirs(directory, exist_ok=True)
+        file_path = os.path.join(directory, f"portfolio_{self.name}.json")
+        state = {
+            "name": self.name,
+            "initial_capital": self.initial_capital,
+            "cash": self.cash,
+            "positions": self.positions,
+            "realized_pnl": self.realized_pnl
+        }
+        with open(file_path, "w") as f:
+            json.dump(state, f, indent=4)
+
+    def load_state(self, directory: str = "data") -> bool:
+        """ Loads portfolio state from a JSON file if it exists. """
+        file_path = os.path.join(directory, f"portfolio_{self.name}.json")
+        if not os.path.exists(file_path):
+            return False
+        
+        try:
+            with open(file_path, "r") as f:
+                state = json.load(f)
+            self.initial_capital = state.get("initial_capital", self.initial_capital)
+            self.cash = state.get("cash", self.cash)
+            self.positions = state.get("positions", {})
+            self.realized_pnl = state.get("realized_pnl", 0.0)
+            return True
+        except Exception as e:
+            print(f"Error loading portfolio state for {self.name}: {e}")
+            return False
+
     def get_equity(self, current_prices: Dict[str, float]) -> float:
         """ Calculates total equity (cash + market value). """
         position_value = 0.0
@@ -76,7 +117,7 @@ class Portfolio:
 
 if __name__ == "__main__":
     # Sanity check
-    p = Portfolio(10000)
+    p = Portfolio("test", 10000)
     p.update_position("AAPL", 10, 150, "BUY")
     print(f"Cash after BUY: {p.cash}")
     print(f"Equity: {p.get_equity({'AAPL': 160})}")
