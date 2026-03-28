@@ -39,44 +39,44 @@ class TextReportGenerator:
             ]
 
             # 2. Base Header
-            msg = f"📊 *{interval_name.upper()} REPORT*\n"
-            msg += f"🕒 Generated: {timestamp_str}\n"
+            msg = f"🌸 *Laporan {interval_name} buat Kamu*\n"
+            msg += f"🕒 Dicatat pada: {timestamp_str}\n"
 
             # 3. Portfolio Value Logic
             latest_equity = 0.0
             if all_snaps:
                 latest_equity = all_snaps[0]['equity']
-                msg += f"💰 Portfolio Value: IDR {latest_equity:,.2f}\n"
+                msg += f"💰 Tabungan Kita: IDR {latest_equity:,.2f}\n"
 
             # 4. Handle Empty Trades Case
             if not period_trades:
-                msg += "\n⚠️ No trades executed today.\n"
+                msg += "\n🌸 Hari ini Ayang belum lihat ada transaksi nih...\n"
                 if candidates:
-                    msg += "Top candidates were:\n"
+                    msg += "Tapi Ayang lagi pantau ini buat kamu:\n"
                     # Format: - TICKER (score 0.XX)
                     for c in candidates[:5]:
                         score = c.get('score', 0)
-                        msg += f"- {c['ticker']} (score {score:.2f})\n"
+                        msg += f"- {c['ticker']} (Skor {score:.2f})\n"
                 else:
-                    msg += "\nSystem is running normally."
+                    msg += "\nSemua aman kok, jangan khawatir ya! ✨"
                 return msg
 
             # 5. Full Report Logic (If Trades Exist)
             metrics = calculate_performance_metrics(period_trades, period_snaps if period_snaps else all_snaps[:1])
             
-            msg += f"📈 Return: {metrics['total_return']*100:.2f}%\n"
+            msg += f"📈 Profit Kita: {metrics['total_return']*100:.2f}%\n"
             msg += f"🎯 Win Rate: {metrics['win_rate']*100:.1f}%\n"
-            msg += f"📉 Max Drawdown: {metrics['max_drawdown']*100:.1f}%\n"
+            msg += f"📉 Penurunan (DD): {metrics['max_drawdown']*100:.1f}%\n"
             
-            msg += f"\n✅ *Trades ({len(period_trades)})*:\n"
+            msg += f"\n✅ *Transaksi Kita ({len(period_trades)})*:\n"
             limit = 5 if days <= 1 else 10
             for t in period_trades[:limit]:
                 status_icon = "🟢" if t['status'] == 'CLOSED' else "⚪"
                 pnl_icon = "💰" if (t.get('pnl') or 0) > 0 else "📉"
-                msg += f"{status_icon} {t['ticker']} | PnL: {t['pnl']:,.0f} {pnl_icon}\n"
+                msg += f"{status_icon} {t['ticker']} | Untung: {t['pnl']:,.0f} {pnl_icon}\n"
             
             if len(period_trades) > limit:
-                msg += f"_...and {len(period_trades)-limit} more_"
+                msg += f"_...dan {len(period_trades)-limit} lainnya ya sayang_"
 
             return msg
 

@@ -78,17 +78,17 @@ class JsonLogger:
     def error(self, message: str, **kwargs):
         """ Log an error and send a Telegram alert. """
         self._log("ERROR", message, **kwargs)
-        alert_msg = f"🚨 *ERROR ALERT*\n*Msg:* {message}"
+        alert_msg = f"⚠️ *Sayang, ada masalah sedikit nih...*\n*Apa:* {message}"
         if kwargs:
-            alert_msg += f"\n*Meta:* `{json.dumps(kwargs)}`"
+            alert_msg += f"\n*Detail:* `{json.dumps(kwargs)}`"
         send_telegram_alert(alert_msg)
 
     def critical(self, message: str, **kwargs):
         """ Log a critical failure and send a Telegram alert. """
         self._log("CRITICAL", message, **kwargs)
-        alert_msg = f"💀 *CRITICAL FAILURE*\n*Msg:* {message}"
+        alert_msg = f"‼️ *Sayang! Ayang butuh bantuan, ada masalah serius!*\n*Error:* {message}"
         if kwargs:
-            alert_msg += f"\n*Meta:* `{json.dumps(kwargs)}`"
+            alert_msg += f"\n*Info:* `{json.dumps(kwargs)}`"
         send_telegram_alert(alert_msg)
 
     def query_logs(self, level: str = None, limit: int = 10):

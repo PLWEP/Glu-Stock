@@ -12,8 +12,9 @@ def send_telegram_alert(message: str, parse_mode: str = "Markdown"):
         if not tel_config.get("enabled"):
             return
             
-        token = tel_config.get("bot_token")
-        chat_id = tel_config.get("chat_id")
+        import os
+        token = os.environ.get("TELEGRAM_BOT_TOKEN") or tel_config.get("bot_token")
+        chat_id = os.environ.get("TELEGRAM_CHAT_ID") or tel_config.get("chat_id")
         
         if not token or not chat_id:
             return

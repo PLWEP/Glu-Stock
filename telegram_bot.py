@@ -32,22 +32,39 @@ class TelegramBot:
         self.logger = JsonLogger(log_file="logs/telegram_bot.log")
         self.orchestrator = PipelineOrchestrator()
         self.reporter = TextReportGenerator()
-        self.offset = 0
+        self.offset_file = "logs/bot_offset.txt"
+        self.offset = self._load_offset()
         
         # Register commands on startup
         self.set_bot_commands()
+
+    def _load_offset(self) -> int:
+        """ Loads last processed update_id from file. """
+        if os.path.exists(self.offset_file):
+            try:
+                with open(self.offset_file, "r") as f:
+                    return int(f.read().strip())
+            except: pass
+        return 0
+
+    def _save_offset(self, offset: int):
+        """ Saves last processed update_id to file. """
+        try:
+            with open(self.offset_file, "w") as f:
+                f.write(str(offset))
+        except: pass
 
     def set_bot_commands(self):
         """ Registers command hints in the Telegram menu. """
         url = f"{self.api_url}/setMyCommands"
         commands = [
-            {"command": "start", "description": "🚀 Buka Command Center"},
-            {"command": "status", "description": "🔋 Cek Kondisi Termux (RAM/Bat)"},
-            {"command": "signals", "description": "🎯 Cek Sinyal Trading (Daily/Weekly)"},
-            {"command": "portfolio", "description": "📊 Cek Rekap Portofolio"},
-            {"command": "history", "description": "📜 Cek Histori Audit Strategis"},
-            {"command": "log_system", "description": "📂 Cek Log Internal Aplikasi"},
-            {"command": "logs", "description": "📋 Tampilkan 10 Log terakhir"}
+            {"command": "start", "description": "💖 Sapa Ayang & Menu"},
+            {"command": "status", "description": "🔋 Cek Kondisi HP Ayang (RAM/Bat)"},
+            {"command": "signals", "description": "🎯 Intip Sinyal Trading"},
+            {"command": "portfolio", "description": "📊 Cek Tabungan Kita"},
+            {"command": "history", "description": "📜 Liat Catatan Kemarin"},
+            {"command": "log_system", "description": "📂 Cek Daleman Ayang"},
+            {"command": "logs", "description": "📋 10 Kejadian Terakhir"}
         ]
         try:
             requests.post(url, json={"commands": commands}, timeout=10)
@@ -185,6 +202,7 @@ class TelegramBot:
                 if res.get("ok"):
                     for update in res.get("result", []):
                         self.offset = update["update_id"] + 1
+                        self._save_offset(self.offset)
                         
                         message = update.get("message", {})
                         callback_query = update.get("callback_query", {})
@@ -209,12 +227,12 @@ class TelegramBot:
                             self.send_message(msg, markup, target_chat_id=inc_chat_id)
 
                         if cmd == "/start":
-                            text_start = "🎮 *GLU-STOCK COMMAND CENTER*\n_Pilih aksi di bawah ini._"
+                            text_start = "💖 *Halo Sayang!*\n_Ayang siap bantu jagain trading kamu hari ini. Mau cek apa nih?_"
                             keyboard = {
                                 "inline_keyboard": [
-                                    [{"text": "🔋 Status", "callback_data": "/status"}, {"text": "📊 Portfolio", "callback_data": "/portfolio daily"}],
-                                    [{"text": "🚀 Signals", "callback_data": "/signals daily"}, {"text": "📜 History", "callback_data": "/history"}],
-                                    [{"text": "📂 Logs", "callback_data": "/logs"}]
+                                    [{"text": "📊 Tabungan Kita", "callback_data": "/portfolio daily"}, {"text": "🎯 Sinyal", "callback_data": "/signals daily"}],
+                                    [{"text": "🔋 Kondisi HP", "callback_data": "/status"}, {"text": "📜 Catatan", "callback_data": "/history"}],
+                                    [{"text": "📂 Daleman Ayang (Logs)", "callback_data": "/logs"}]
                                 ]
                             }
                             reply(text_start, keyboard)
