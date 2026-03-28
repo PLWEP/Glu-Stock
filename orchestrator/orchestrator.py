@@ -22,11 +22,14 @@ class PipelineOrchestrator:
         self.report_generator = ReportGenerator(output_dir=output_dir)
         self.results = {"success": [], "failure": [], "candidates": []}
 
-    def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict[str, Any]:
+    def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: Optional[str] = None, end_date: Optional[str] = None, pipeline: str = "daily") -> Dict[str, Any]:
         """
         Coordinates the institutional trading lifecycle.
-        If dates are not provided, defaults to 1-year lookback ending today.
+        Supports 'daily', 'weekly', and 'monthly' pipelines.
         """
+        config = ConfigLoader().get_config()
+        paper_trading = config.get("paper_trading", True)
+        
         if end_date is None:
             end_date = datetime.now().strftime("%Y-%m-%d")
         if start_date is None:
@@ -41,8 +44,8 @@ class PipelineOrchestrator:
         all_data = []
 
         if tickers is None:
-            self.logger.info(f"Orchestrator: Selecting top {max_stocks} dynamically...")
-            tickers = self.universe_agent.select_universe(max_stocks, start_date, end_date)
+            self.logger.info(f"Orchestrator: Selecting top {max_stocks} dynamically via [{pipeline}] pipeline...")
+            tickers = self.universe_agent.select_universe(max_stocks, start_date, end_date, pipeline=pipeline)
             
         tickers = tickers or []
         
@@ -71,7 +74,7 @@ class PipelineOrchestrator:
                     continue
                 
                 # B. Strategy & Candidate Logic
-                df = self.strategy_agent.get_recommendations(df)
+                df = self.strategy_agent.get_recommendations(df, pipeline=pipeline, paper_trading=paper_trading)
                 
                 # C. Execution (Always attempt trade logic for selected stocks)
                 self.trading_agent.trade(df)

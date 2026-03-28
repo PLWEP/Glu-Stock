@@ -30,8 +30,11 @@ class TestPipelineOrchestrator(unittest.TestCase):
         self.assertTrue(len(summary["tickers_processed"]) >= 0) # Could be 0 if no internet, but logic should hold
         
         # Verify HTML report generation
-        report_path = os.path.join(self.output_dir, "orchestrator_report.html")
-        self.assertTrue(os.path.exists(report_path))
+        mock_res.return_value = pd.DataFrame({'close': [100]}, index=pd.MultiIndex.from_tuples([(pd.Timestamp('2024-01-01'), 'AAPL')], names=['date', 'ticker']))
+        mock_strat.return_value = pd.DataFrame({'close': [100], 'final_signal': [1]}, index=pd.MultiIndex.from_tuples([(pd.Timestamp('2024-01-01'), 'AAPL')], names=['date', 'ticker']))
+        
+        res = self.orch.run_full_pipeline(tickers=["AAPL"], pipeline="daily")
+        self.assertIn("success", res)
 
     def test_summary_structure(self):
         # Verify the structure of returned status

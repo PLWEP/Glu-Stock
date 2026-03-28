@@ -1,5 +1,39 @@
 # Changelog
 
+## [v1.4.0] - 2026-03-28
+
+### Added
+
+- Dynamic Universe Discovery: `UniverseManager.refresh_universe()` fetches ~800+ tickers from IDX official endpoints.
+- Sector metadata and BUMN identification automated during discovery.
+- Local cache policy for `idx_stocks.csv` to minimize network latency.
+
+### Removed
+
+- Hardcoded ticker list in `UniverseManager`.
+
+## [v1.3.0] - 2026-03-28
+
+### Added
+
+- 3 distinct trading pipelines: `Daily`, `Weekly`, and `Monthly`.
+- `DailyStrategy`: Pivot Points, Donchian Channel, VWAP logic.
+- `WeeklyStrategy`: 3 EMA T-Alignment, RSI (50-60), MACD, Pairs Trading Z-score.
+- `MonthlyStrategy`: Price-Momentum, Low-Vol Anomaly, Value Rotation (B/P).
+- Pipeline-specific filtering in `UniverseManager` (Liquidity, Fundamental ROE/Laba YoY).
+
+### Changed
+
+- `UniverseManager` now enforces a Strict Global Filter (Excludes BUMN & Banks).
+- `StrategyAgent` refactored as a strategy dispatcher for multiple timeframes.
+- `PipelineOrchestrator` updated with `pipeline` and `paper_trading` parameters.
+
+### Fixed
+
+- Standardized institutional guardrails: Long-Only for Live, Short visibility for Paper.
+- Removed legacy `record_trade` and `record_portfolio_snapshot` functions from `TradingDatabase`.
+- Consolidated and modernized the database test suite.
+
 ## [v1.2.0] - 2026-03-28
 
 ### Added

@@ -8,6 +8,9 @@ from portfolio.portfolio import Portfolio
 from execution.execution import ExecutionEngine
 from risk.risk import RiskManager
 from data.universe import UniverseManager
+from strategies.daily import DailyStrategy
+from strategies.weekly import WeeklyStrategy
+from strategies.monthly import MonthlyStrategy
 from utils.logger import JsonLogger
 
 class ResearchAgent:
@@ -26,14 +29,31 @@ class ResearchAgent:
         return df
 
 class StrategyAgent:
-    """ Manages signal generation and strategy validation. """
+    """ Manages signal generation across Daily, Weekly, and Monthly pipelines. """
     def __init__(self):
-        self.strategy = TradingStrategy()
+        self.pipelines = {
+            "daily": DailyStrategy(),
+            "weekly": WeeklyStrategy(),
+            "monthly": MonthlyStrategy()
+        }
         self.backtester = VectorizedBacktester()
 
-    def get_recommendations(self, df: pd.DataFrame, model: Optional[Any] = None) -> pd.DataFrame:
-        print("StrategyAgent: Generating trading signals...")
-        return self.strategy.generate_signals(df, model=model)
+    def get_recommendations(self, df: pd.DataFrame, pipeline: str = "daily", paper_trading: bool = False) -> pd.DataFrame:
+        """
+        Generates trading signals for a specific pipeline.
+        Handles paper_trading=True for Short porsi visibility.
+        """
+        print(f"StrategyAgent: Generating signals for [{pipeline}] pipeline (Paper Trading: {paper_trading})...")
+        strategy = self.pipelines.get(pipeline.lower())
+        
+        if strategy is None:
+            raise ValueError(f"Unknown pipeline: {pipeline}. Supported: {list(self.pipelines.keys())}")
+            
+        # Support for paper_trading flag if the strategy supports it
+        if hasattr(strategy, "generate_signals") and "paper_trading" in strategy.generate_signals.__code__.co_varnames:
+            return strategy.generate_signals(df, paper_trading=paper_trading)
+        else:
+            return strategy.generate_signals(df)
 
     def validate_strategy(self, df: pd.DataFrame) -> Dict[str, Any]:
         print("StrategyAgent: Validating strategy with backtest...")
@@ -51,41 +71,42 @@ class UniverseSelectionAgent:
         self.universe_manager = UniverseManager()
         self.logger = JsonLogger(log_file="logs/universe_selection.log")
 
-    def select_universe(self, max_stocks: int, start_date: str, end_date: str) -> List[str]:
+    def select_universe(self, max_stocks: int, start_date: str, end_date: str, pipeline: str = "daily") -> List[str]:
         """
-        Executes the selection pipeline:
-        Metadata -> Strategic Filter -> Research -> Factor Ranking -> Selection.
+        Executes the selection pipeline based on the requested strategy timeframe.
+        - global filter -> pipeline filter -> research -> ranking.
         """
-        print(f"UniverseSelectionAgent: Curating top {max_stocks} stocks...")
+        self.logger.info(f"UniverseSelectionAgent: Curating for [{pipeline}] pipeline (Max: {max_stocks})")
         
-        # 1. Load Metadata
+        # 1. Global Filter (Hard Exclusion)
         all_metadata = self.universe_manager.get_idx_tickers()
+        global_filtered = self.universe_manager.filter_global(all_metadata)
+        tickers = global_filtered["ticker"].tolist()
         
-        # 2. Strategic Filtering (Exclude Bank/BUMN)
-        filtered_metadata = self.universe_manager.filter_excluded_stocks(all_metadata)
-        tickers = filtered_metadata["ticker"].tolist()
-        
-        # 3. Orchestrate Research (Collect market data)
+        # 2. Sequential Research (Needed for technical filters)
         df_researched = self.research_agent.research(tickers, start_date, end_date)
-        
-        # 4. Partition data for ranking (DRY Refactored)
         price_data_dict = self.universe_manager.partition_price_data(df_researched, tickers)
-
-        # 5. Execute Multi-Factor Ranking
+        
+        # 3. Pipeline Specific Filtering
+        if pipeline.lower() == "daily":
+            selected_tickers = self.universe_manager.filter_daily(tickers, price_data_dict)
+        elif pipeline.lower() == "weekly":
+            selected_tickers = self.universe_manager.filter_weekly(tickers, price_data_dict)
+        elif pipeline.lower() == "monthly":
+            # Mock or fetch fundamental data for ROI/Laba YoY
+            fundamental_data = {t: {"returnOnEquity": 0.15, "netIncomeGrowth": 0.1} for t in tickers} # Placeholder
+            selected_tickers = self.universe_manager.filter_monthly(tickers, price_data_dict, fundamental_data)
+        else:
+            selected_tickers = tickers # Fallback
+            
+        # 4. Final Ranking (Multi-Factor)
         top_tickers, all_scores = self.universe_manager.rank_stocks(
-            filtered_metadata, 
-            price_data_dict, 
+            global_filtered[global_filtered["ticker"].isin(selected_tickers)],
+            price_data_dict,
             top_n=max_stocks
         )
         
-        # 6. Structured Logging
-        self.logger.info(
-            "UniverseSelectionAgent: Curated watchlist generated",
-            selected=top_tickers,
-            scores=all_scores
-        )
-        
-        print(f"UniverseSelectionAgent: Selected {top_tickers}")
+        self.logger.info("UniverseSelectionAgent: Selection complete", selected=top_tickers)
         return top_tickers
 
 class TradingAgent:

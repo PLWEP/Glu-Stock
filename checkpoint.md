@@ -71,11 +71,11 @@ The Orchestrator provides a high-level entry point for multi-ticker trading work
 
 The Configuration Module manages externalized trading parameters using YAML.
 
-- **File:** `config.yaml` for capital, risk, and IDX## Architecture Snapshot (v1.2.0)
-- **Data Layer**: `UniverseManager` provides centralized partitioning and ranking.
-- **Strategy Layer**: `TradingStrategy` uses institutional multi-factor scoring with timeframe-aware weights.
-- **Orchestration**: `PipelineOrchestrator` enforces reporting regardless of signal presence; utilizes `JsonLogger` for telemetry.
-- **Resilience**: Secrets in `.env`; Log tailing for O(1) memory usage; Specific exception handling pass.
+- **File:** `config.yaml` for capital, risk, and IDX## Architecture Snapshot (v1.4.0)
+- **Curation Layer**: `UniverseManager` implements **Dynamic Discovery** via IDX endpoints, enabling analysis across 800+ tickers.
+- **Strategy Layer**: Modular dispatcher for Daily/Weekly/Monthly pipelines with vectorized Technical/Fundamental guards.
+- **Execution Engine**: Enforces institutional Long-Only rules for live trading; Paper-Short reporting.
+- **Resilience**: Auto-refreshing local cache (`idx_stocks.csv`) for market universe stability.
   d risk percentage (0-1).
 - **Status:** Hardened.
 
