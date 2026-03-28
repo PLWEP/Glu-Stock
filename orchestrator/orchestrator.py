@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSelectionAgent
 from reporting.report import ReportGenerator
@@ -21,8 +22,17 @@ class PipelineOrchestrator:
         self.report_generator = ReportGenerator(output_dir=output_dir)
         self.results = {"success": [], "failure": [], "candidates": []}
 
-    def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: str = "2024-01-01", end_date: str = "2024-03-27") -> Dict[str, Any]:
-        """ Executes the full pipeline with strict telemetry and reporting enforcement. """
+    def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: Optional[str] = None, end_date: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Coordinates the institutional trading lifecycle.
+        If dates are not provided, defaults to 1-year lookback ending today.
+        """
+        if end_date is None:
+            end_date = datetime.now().strftime("%Y-%m-%d")
+        if start_date is None:
+            start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+            
+        self.logger.info(f"Orchestrator: Starting pipeline for {tickers}, max_stocks={max_stocks}")
         
         # 1. Initialization and Universe Selection
         scanned_count = 0
@@ -31,7 +41,7 @@ class PipelineOrchestrator:
         all_data = []
 
         if tickers is None:
-            print(f"Orchestrator: Selecting top {max_stocks} dynamically...")
+            self.logger.info(f"Orchestrator: Selecting top {max_stocks} dynamically...")
             tickers = self.universe_agent.select_universe(max_stocks, start_date, end_date)
             
         tickers = tickers or []
@@ -39,22 +49,21 @@ class PipelineOrchestrator:
         # DEBUG MODE OVERRIDE
         debug_mode = ConfigLoader().get_config().get('debug_mode', True)
         if debug_mode:
-            print("Orchestrator: !! DEBUG MODE ACTIVE !! Forcing Top 3 selection.")
+            self.logger.info("Orchestrator: !! DEBUG MODE ACTIVE !! Forcing Top 3 selection.")
             selected_stocks = tickers[:3]
         else:
             # Ensure we only process the top 5 (selected_stocks)
             selected_stocks = tickers[:5]
 
         scanned_count = len(tickers)
-        print(f"Orchestrator: [STEP 1/3] Scanned {scanned_count} tickers. Selecting Top {len(selected_stocks)}.")
-        print(f"Selected stocks: {selected_stocks}")
+        self.logger.info(f"Orchestrator: [STEP 1/3] Scanned {scanned_count} tickers. Selecting Top {len(selected_stocks)}.")
         
         # Collect candidates for reporting
         self.results["candidates"] = [{"ticker": t, "score": 0.0} for t in selected_stocks] # Placeholder or map from Universe agent
 
         # 2. Sequential Processing (Ensuring execution regardless of signal strength)
         for ticker in selected_stocks:
-            print(f"---\nOrchestrator: Processing [{ticker}]...")
+            self.logger.info(f"Orchestrator: Processing [{ticker}]...")
             try:
                 # A. Research
                 df = self.research_agent.research([ticker], start_date, end_date)
@@ -74,19 +83,19 @@ class PipelineOrchestrator:
                 all_data.append(df)
                 
             except Exception as e:
-                print(f"Orchestrator: Error processing [{ticker}]: {str(e)}")
+                self.logger.error(f"Orchestrator: Error processing [{ticker}]: {str(e)}")
                 self.results["failure"].append({"ticker": ticker, "error": str(e)})
 
-        print(f"---\nOrchestrator: [STEP 2/3] Found {candidate_count} candidates for execution.")
-        print(f"Orchestrator: [STEP 3/3] Processed {trade_count} execution attempts.")
-        print(f"Selected stocks: {selected_stocks}")
+        self.logger.info(f"Orchestrator: [STEP 2/3] Found {candidate_count} candidates for execution.")
+        self.logger.info(f"Orchestrator: [STEP 3/3] Processed {trade_count} execution attempts.")
 
         # 3. Forced Reporting (Always Runs)
-        print("Orchestrator: Finalizing session and forced reporting...")
+        self.logger.info("Orchestrator: Finalizing session and forced reporting...")
         final_summary = self._consolidate_results(all_data)
         self._generate_final_report(final_summary)
         self._send_telegram_summary(final_summary, candidates=self.results["candidates"])
         
+        self.logger.info(f"Orchestrator: Aggregation complete, tickers_processed={len(final_summary['tickers_processed'])}")
         return final_summary
 
     def _send_telegram_summary(self, summary: Dict[str, Any], candidates: List[Dict[str, Any]] = None):

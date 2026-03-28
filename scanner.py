@@ -1,5 +1,7 @@
 import pandas as pd
+from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
+from utils.logger import JsonLogger
 from agents.agents import ResearchAgent
 from data.universe import UniverseManager
 
@@ -11,11 +13,18 @@ class MarketScanner:
     def __init__(self, research_agent: Optional[ResearchAgent] = None):
         self.research_agent = research_agent or ResearchAgent()
         self.universe_manager = UniverseManager()
+        self.logger = JsonLogger(log_file="logs/scanner.log")
 
-    def scan(self, tickers: List[str], threshold: float = 0.5, start_date: str = "2024-01-01", end_date: str = "2024-03-27") -> List[Dict[str, Any]]:
+    def scan(self, tickers: List[str], threshold: float = 0.5, start_date: Optional[str] = None, end_date: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Scans a list of tickers and returns the top 5 candidates by score.
+        If dates are not provided, defaults to 1-year lookback.
         """
+        if end_date is None:
+            end_date = datetime.now().strftime("%Y-%m-%d")
+        if start_date is None:
+            start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+
         if not tickers:
             return []
 
@@ -30,19 +39,11 @@ class MarketScanner:
             if df_researched.empty:
                 return []
         except Exception as e:
-            print(f"MarketScanner Error: Research failed: {e}")
+            self.logger.error("MarketScanner: Research phase failed", error=str(e))
             return []
         
-        # 3. Partition data for ranking
-        price_data_dict = {}
-        for ticker in tickers:
-            try:
-                # If ticker is missing from index or fails, continue to next
-                ticker_data = df_researched.xs(ticker, level="ticker")
-                if not ticker_data.empty:
-                    price_data_dict[ticker] = ticker_data
-            except (KeyError, Exception):
-                continue
+        # 3. Partition data for ranking (DRY Refactored)
+        price_data_dict = self.universe_manager.partition_price_data(df_researched, tickers)
 
         # 4. Execute Multi-Factor Ranking
         _, all_scores = self.universe_manager.rank_stocks(
@@ -62,7 +63,9 @@ class MarketScanner:
         # Sort by score descending and take top 5
         candidates = sorted(candidates, key=lambda x: x["score"], reverse=True)[:5]
         
-        print(f"Top candidates: {candidates}")
+        self.logger.info("MarketScanner: Scan complete", 
+                         tickers_scanned=len(tickers), 
+                         top_candidates=[c['ticker'] for c in candidates])
         return candidates
 
 if __name__ == "__main__":

@@ -52,10 +52,11 @@ class TestUniverseManager(unittest.TestCase):
         price_dict = {"A.JK": data_a, "D.JK": data_d}
         
         df_filtered = pd.DataFrame([["A.JK"], ["D.JK"]], columns=["ticker"])
-        top_stocks = self.mgr.rank_stocks(df_filtered, price_dict, top_n=1)
+        top_stocks, scores = self.mgr.rank_stocks(df_filtered, price_dict, top_n=1)
         
         self.assertEqual(len(top_stocks), 1)
         self.assertEqual(top_stocks[0], "A.JK")
+        self.assertIn("A.JK", scores)
 
 if __name__ == "__main__":
     unittest.main()

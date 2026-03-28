@@ -12,5 +12,4 @@ trading:
 
 telegram:
     enabled: true # Set to true to enable bot
-    bot_token: "8274271189:AAEwi4xE80n9mDmPguCDEtX91GQzh09NiPc"
-    chat_id: "603041435"
+    # Secrets moved to .env (TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID)

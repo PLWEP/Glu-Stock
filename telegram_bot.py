@@ -16,8 +16,8 @@ class TelegramBot:
     def __init__(self):
         self.config = ConfigLoader().get_config()
         self.tel_config = self.config.get("telegram", {})
-        self.token = self.tel_config.get("bot_token")
-        self.chat_id = self.tel_config.get("chat_id")
+        self.token = os.environ.get("TELEGRAM_BOT_TOKEN")
+        self.chat_id = os.environ.get("TELEGRAM_CHAT_ID")
         self.api_url = f"https://api.telegram.org/bot{self.token}"
         self.db = TradingDatabase()
         self.logger = JsonLogger(log_file="logs/telegram_bot.log")
@@ -60,14 +60,29 @@ class TelegramBot:
         status_msg += f"📅 Time: {time.strftime('%Y-%m-%d %H:%M:%S')}\n"
         
         # Check last scheduler run
-        log_path = "logs/trading.log" # Updated to main trading log
+        log_path = "logs/trading.log"
         if os.path.exists(log_path):
-            with open(log_path, "r") as f:
-                lines = f.readlines()
-                if lines:
-                    last_log = json.loads(lines[-1])
-                    status_msg += f"📊 Last Activity: {last_log.get('timestamp')}\n"
-                    status_msg += f"✅ Message: {last_log.get('message')}"
+            try:
+                with open(log_path, "rb") as f:
+                    # Efficiently seek to end and find last line
+                    f.seek(0, os.SEEK_END)
+                    pos = f.tell()
+                    buffer = []
+                    while pos > 0:
+                        pos -= 1
+                        f.seek(pos)
+                        char = f.read(1)
+                        if char == b"\n" and buffer:
+                            break
+                        buffer.append(char)
+                    
+                    last_line = b"".join(reversed(buffer)).decode("utf-8").strip()
+                    if last_line:
+                        last_log = json.loads(last_line)
+                        status_msg += f"📊 Last Activity: {last_log.get('timestamp')}\n"
+                        status_msg += f"✅ Message: {last_log.get('message')}"
+            except Exception as e:
+                self.logger.error("Telegram: Failed to read last log line", error=str(e))
         
         self.send_message(status_msg)
 

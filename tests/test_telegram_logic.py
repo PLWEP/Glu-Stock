@@ -1,11 +1,13 @@
 import unittest
 from unittest.mock import MagicMock, patch
+from datetime import datetime
 from telegram_bot import TelegramBot
 
 class TestTelegramLogic(unittest.TestCase):
     @patch('telegram_bot.ConfigLoader')
     @patch('telegram_bot.TradingDatabase')
-    def setUp(self, mock_db, mock_config):
+    @patch('utils.text_report.TradingDatabase')
+    def setUp(self, mock_db_report, mock_db_bot, mock_config):
         # Mock Config
         self.mock_config = mock_config.return_value
         self.mock_config.get_config.return_value = {
@@ -15,8 +17,9 @@ class TestTelegramLogic(unittest.TestCase):
                 "chat_id": "12345"
             }
         }
-        # Mock DB
-        self.mock_db = mock_db.return_value
+        # Both modules should use the same mock DB instance
+        self.mock_db = mock_db_report.return_value
+        mock_db_bot.return_value = self.mock_db
         
         self.bot = TelegramBot()
         self.bot.send_message = MagicMock() # Don't actually send
@@ -30,20 +33,21 @@ class TestTelegramLogic(unittest.TestCase):
             self.assertIn("System: Online", msg)
 
     def test_handle_portfolio_formatting(self):
-        # Setup dummy data
+        # Setup dummy data with ISO dates
+        now = datetime.now().isoformat()
         self.mock_db.get_portfolio_history.return_value = [
-            {"cash": 1000000.0, "equity": 1000000.0}
+            {"date": now, "equity": 1000000.0, "cash": 900000.0, "positions_value": 100000.0}
         ]
         self.mock_db.get_all_trades.return_value = [
-            {"side": "BUY", "ticker": "BBCA.JK", "price": 10000.0}
+            {"entry_date": now, "status": "OPEN", "ticker": "BBCA.JK", "pnl": 0.0}
         ]
         
         self.bot.handle_portfolio()
         args, _ = self.bot.send_message.call_args
         msg = args[0]
         
-        self.assertIn("Current Portfolio Summary", msg)
-        self.assertIn("Cash: IDR 1,000,000.00", msg)
+        self.assertIn("DAILY REPORT", msg)
+        self.assertIn("Portfolio Value: IDR 1,000,000.00", msg)
         self.assertIn("BBCA.JK", msg)
 
     @patch('requests.get')

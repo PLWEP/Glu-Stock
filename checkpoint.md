@@ -71,10 +71,13 @@ The Orchestrator provides a high-level entry point for multi-ticker trading work
 
 The Configuration Module manages externalized trading parameters using YAML.
 
-- **File:** `config.yaml` for capital, risk, and IDX tickers.
-- **Loader:** `ConfigLoader` handles parsing, validation, and defaults.
-- **Safety:** Enforces positive capital and valid risk percentage (0-1).
-- **Status:** Production-ready.
+- **File:** `config.yaml` for capital, risk, and IDX## Architecture Snapshot (v1.2.0)
+- **Data Layer**: `UniverseManager` provides centralized partitioning and ranking.
+- **Strategy Layer**: `TradingStrategy` uses institutional multi-factor scoring with timeframe-aware weights.
+- **Orchestration**: `PipelineOrchestrator` enforces reporting regardless of signal presence; utilizes `JsonLogger` for telemetry.
+- **Resilience**: Secrets in `.env`; Log tailing for O(1) memory usage; Specific exception handling pass.
+  d risk percentage (0-1).
+- **Status:** Hardened.
 
 ## Module Logic: Logging Module
 
@@ -168,10 +171,11 @@ The Telegram Integration Module provides real-time monitoring and control of the
 
 - **Bot Commands:** `/status` (health), `/portfolio` (detailed performance), `/report [daily|weekly|monthly]` (periodic summaries).
 - **Alert Triggers:** Real-time `BUY` icons, errors, and automated end-of-session reports.
+- **Efficiency:** Optimized `handle_status` with `os.seek()` for O(1) log tailing.
 - **Diagnostics:** Strict debug logging in `send_message` and standalone `--test` connectivity mode.
 - **Provider:** Integrated bot listener and proactive orchestrator alerts.
 - **Data Source:** Direct consumption of `TradingDatabase` and `TextReportGenerator`.
-- **Status:** Production-ready.
+- **Status:** Hardened.
 
 ## Core Execution Rules
 

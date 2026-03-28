@@ -18,19 +18,21 @@ class TradingStrategy:
         # 1. Compute individual factor scores (0-1)
         df = self._compute_factor_scores(df)
         
-        # 2. Combine into composite score using requested weights
-        # score = 0.3*rsi + 0.3*macd + 0.2*trend + 0.2*volume
+        # 2. Combine into composite score using timeframe-aware weights
+        # Daily: Short-term (RSI/MACD) | Yearly: Long-term (Trend)
+        if timeframe == "daily":
+            weights = {'rsi': 0.3, 'macd': 0.3, 'trend': 0.2, 'vol': 0.2}
+        else:
+            # Yearly/Weekly: Focus on Trend and Volume
+            weights = {'rsi': 0.1, 'macd': 0.1, 'trend': 0.6, 'vol': 0.2}
+
         df['final_score'] = (
-            0.3 * df['s_rsi'] + 
-            0.3 * df['s_macd'] + 
-            0.2 * df['s_trend'] + 
-            0.2 * df['s_vol']
+            weights['rsi'] * df['s_rsi'] + 
+            weights['macd'] * df['s_macd'] + 
+            weights['trend'] * df['s_trend'] + 
+            weights['vol'] * df['s_vol']
         )
-        
-        # 3. Handle ML signals (if model is provided) - Maintain for architecture compatibility
-        if model and features:
-            df = self._generate_ml_signals(df, model, features)
-            df['final_score'] = (df['final_score'] + df['ml_confidence'] * df['ml_signal'].clip(0, 1)) / 2
+        df['timeframe'] = timeframe
         
         # 4. Map back to discrete signals
         # SIGNAL: "BUY" if score > 0.5 else "HOLD"
@@ -78,22 +80,6 @@ class TradingStrategy:
 
         return df
 
-    def _generate_ml_signals(self, df: pd.DataFrame, model: object, features: List[str]) -> pd.DataFrame:
-        """ML-based prediction integration."""
-        try:
-            preds = model.predict(df[features])
-            if hasattr(model, "predict_proba"):
-                probs = model.predict_proba(df[features])
-                confidence = np.max(probs, axis=1)
-            else:
-                confidence = 1.0
-            
-            df['ml_signal'] = preds
-            df['ml_confidence'] = confidence
-        except Exception:
-            df['ml_signal'] = 0
-            df['ml_confidence'] = 0.0
-        return df
 
 if __name__ == "__main__":
     # Sanity check

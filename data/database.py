@@ -160,18 +160,6 @@ class TradingDatabase:
         finally:
             conn.close()
 
-    # --- Backward Compatibility Mappings ---
-    # These helpers maintain functionality for existing modules during transition.
-
-    def record_trade(self, ticker: str, side: str, quantity: float, price: float):
-        """ Legacy wrapper for record_trade. Maps to insert_trade for BUY. """
-        if side == "BUY":
-            self.insert_trade(ticker, price, int(quantity))
-        # Note: SELL would need trade_id lookup, handled by the new TradingAgent logic.
-
-    def record_portfolio_snapshot(self, equity: float, cash: float):
-        """ Legacy wrapper for record_portfolio_snapshot. """
-        self.insert_portfolio_snapshot(equity, cash, equity - cash)
 
 if __name__ == "__main__":
     # Test initialization

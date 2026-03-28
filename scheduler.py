@@ -1,7 +1,7 @@
 import schedule
 import time
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 from utils.config import ConfigLoader
 from utils.logger import JsonLogger
 from orchestrator.orchestrator import PipelineOrchestrator
@@ -25,11 +25,14 @@ class TradingScheduler:
             self.config_loader = ConfigLoader()
             params = self.config_loader.get_trading_params()
             
-            # Run orchestrator
+            # Run orchestrator with dynamic 1-year lookback
+            end_date = datetime.now().strftime("%Y-%m-%d")
+            start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+            
             summary = self.orchestrator.run_full_pipeline(
                 tickers=params["tickers"],
-                start_date="2023-01-01", # Fixed lookback start
-                end_date=datetime.now().strftime("%Y-%m-%d")
+                start_date=start_date,
+                end_date=end_date
             )
             
             self.logger.info("Scheduler: Pipeline executed successfully", 

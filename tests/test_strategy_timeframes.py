@@ -15,7 +15,7 @@ class TestStrategyTimeframes(unittest.TestCase):
         self.df['volume'] = 1000
         # Dummy indicators (Mocked from FeatureEngineer)
         self.df['rsi'] = 60
-        self.df['macd_h'] = 5
+        self.df['macd_diff'] = 5
         self.df['sma_20'] = 150
 
     def test_score_differentiation(self):

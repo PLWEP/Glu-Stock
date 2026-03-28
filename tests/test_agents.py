@@ -20,8 +20,10 @@ class TestAgents(unittest.TestCase):
         df = pd.DataFrame({
             'close': [150 + i for i in range(10)],
             'rsi': [30 + i for i in range(10)],
-            'macd': [0.1] * 10,
-            'macd_signal': [0.05] * 10
+            'macd_diff': [0.1] * 10,
+            'macd_signal': [0.05] * 10,
+            'sma_20': [145 + i for i in range(10)],
+            'volume': [1000] * 10
         }, index=pd.MultiIndex.from_tuples([(d, 'AAPL') for d in dates], names=['date', 'ticker']))
         
         # 2. Strategy Agent

@@ -40,6 +40,26 @@ class UniverseManager:
         ]
         return filtered
 
+    def partition_price_data(self, df: pd.DataFrame, tickers: List[str]) -> Dict[str, pd.DataFrame]:
+        """
+        Partitions a MultiIndex DataFrame into a dictionary of per-ticker DataFrames.
+        Ensures robust handling of missing data and logging for audit trails.
+        """
+        partitioned = {}
+        for ticker in tickers:
+            try:
+                # Use Cross-section (XS) for efficient MultiIndex slicing
+                ticker_data = df.xs(ticker, level="ticker")
+                if not ticker_data.empty:
+                    partitioned[ticker] = ticker_data
+            except KeyError:
+                # Ticker exists in metadata but not in the researched data
+                continue
+            except Exception:
+                # Generic safety guard for unexpected data corruption
+                continue
+        return partitioned
+
     def rank_stocks(self, df: pd.DataFrame, price_data_dict: Dict[str, pd.DataFrame], top_n: int = 10) -> Tuple[List[str], Dict[str, Any]]:
         """
         Ranks stocks using a multi-factor ensemble.

@@ -66,19 +66,10 @@ class UniverseSelectionAgent:
         tickers = filtered_metadata["ticker"].tolist()
         
         # 3. Orchestrate Research (Collect market data)
-        # Note: We need per-ticker dataframes to pass to UniverseManager.rank_stocks
-        # ResearchAgent returns a concatenated MultiIndex DataFrame.
         df_researched = self.research_agent.research(tickers, start_date, end_date)
         
-        # 4. Partition data for ranking
-        price_data_dict = {}
-        for ticker in tickers:
-            try:
-                ticker_data = df_researched.xs(ticker, level="ticker")
-                if not ticker_data.empty:
-                    price_data_dict[ticker] = ticker_data
-            except KeyError:
-                continue
+        # 4. Partition data for ranking (DRY Refactored)
+        price_data_dict = self.universe_manager.partition_price_data(df_researched, tickers)
 
         # 5. Execute Multi-Factor Ranking
         top_tickers, all_scores = self.universe_manager.rank_stocks(
