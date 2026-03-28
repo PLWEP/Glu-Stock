@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSelectionAgent
-from reporting.report import ReportGenerator
+from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSelectionAgent
 from utils.alerts import send_telegram_alert
 from utils.history import StrategicHistoryManager
 from utils.sysinfo import SysInfo
@@ -32,7 +32,6 @@ class PipelineOrchestrator:
         self.backtester = VectorizedBacktester(initial_capital=initial_cash)
         self.trading_agent = TradingAgent(initial_cash=initial_cash)
         self.universe_agent = UniverseSelectionAgent(research_agent=self.research_agent)
-        self.report_generator = ReportGenerator(output_dir=output_dir)
 
     def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: Optional[str] = None, end_date: Optional[str] = None, pipeline: str = "daily", send_alert: bool = False) -> Dict[str, Any]:
         """
@@ -143,7 +142,7 @@ class PipelineOrchestrator:
 
         # 3. Forced Reporting (Always Runs)
         self.logger.info("Orchestrator: Finalizing session and forced reporting...")
-        final_summary = self._consolidate_results(list(all_data.values()))
+        final_summary = self._consolidate_results(list(all_data.values()), pipeline=pipeline)
         
         # Institutional Signal Report
         self.persistence.save_signals(pipeline, self.results["candidates"])
@@ -151,8 +150,6 @@ class PipelineOrchestrator:
         if send_alert:
             signal_report = self.generate_signal_report(pipeline)
             send_telegram_alert(signal_report)
-        
-        self._generate_final_report(final_summary)
         
         self.logger.info(f"Orchestrator: Aggregation complete, tickers_processed={len(final_summary['tickers_processed'])}")
         return final_summary
@@ -293,7 +290,7 @@ class PipelineOrchestrator:
         
         send_telegram_alert(report)
 
-    def _consolidate_results(self, all_dfs: List[pd.DataFrame]) -> Dict[str, Any]:
+    def _consolidate_results(self, all_dfs: List[pd.DataFrame], pipeline: str = "daily") -> Dict[str, Any]:
         """ Consolidates metrics from all successful ticker runs. """
         # We'll use the portfolio status as ground truth
         # For simplicity, we'll combine all DFs to get a global equity curve if needed
@@ -309,7 +306,7 @@ class PipelineOrchestrator:
                 ticker = df.index.get_level_values('ticker')[0]
                 prices[ticker] = last_row['close']
         
-        status = self.trading_agent.get_status(prices)
+        status = self.trading_agent.get_status(prices, pipeline=pipeline)
         
         return {
             "tickers_processed": self.results["success"],
@@ -318,23 +315,7 @@ class PipelineOrchestrator:
             "trade_log_path": self.trading_agent.execution_engine.log_file
         }
 
-    def _generate_final_report(self, summary: Dict[str, Any]):
-        """ Triggers the HTML report generation. """
-        print("Orchestrator: Generating final HTML report...")
-        log_file = summary.get("trade_log_path", "execution/trade_log.csv")
-        trade_log = pd.DataFrame()
-        if os.path.exists(log_file):
-            trade_log = pd.read_csv(log_file)
-            
-        metrics = {
-            "Total_Equity": f"${summary['final_portfolio']['equity']:.2f}",
-            "Cash": f"${summary['final_portfolio']['cash']:.2f}",
-            "Realized_PnL": f"${summary['final_portfolio']['realized_pnl']:.2f}",
-            "Assets": len(summary.get('tickers_processed', [])),
-            "Failures": len(summary.get('failures', []))
-        }
-        equity_series = pd.Series([100000, summary['final_portfolio']['equity']])
-        self.report_generator.generate_html_report(metrics, trade_log, equity_series, filename="orchestrator_report.html")
+        print("Orchestrator: Consolidating final summary...")
 
     def handle_history_command(self, command_str: str) -> str:
         """ 

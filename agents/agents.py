@@ -200,7 +200,7 @@ class TradingAgent:
         """ Gets status for one or all portfolios. """
         if pipeline:
             p = self.portfolios.get(pipeline.lower())
-            return {"cash": p.cash, "equity": p.get_equity(current_prices), "pnl": p.realized_pnl} if p else {}
+            return {"cash": p.cash, "equity": p.get_equity(current_prices), "realized_pnl": p.realized_pnl} if p else {}
             
         return {name: {"cash": p.cash, "equity": p.get_equity(current_prices)} for name, p in self.portfolios.items()}
 

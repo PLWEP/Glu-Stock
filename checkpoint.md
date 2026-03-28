@@ -64,7 +64,7 @@ The Orchestrator provides a high-level entry point for multi-ticker trading work
 - **Pipeline:** Coordinates selection -> Research -> Strategy -> Trading -> Reporting.
 - **Dynamic Selection:** Integrates `UniverseSelectionAgent` for automatic ticker curation if none are provided.
 - **Resilience:** Per-ticker isolation and error handling.
-- **Reporting:** Automatic generation of consolidated performance dashboards.
+- **Reporting:** Direct integration with Telegram for real-time alerts and periodic summaries.
 - **Status:** Production-ready.
 
 ## Module Logic: Configuration Module
@@ -158,11 +158,11 @@ The Performance Module calculates institutional-grade trading metrics from reali
 
 ## Module Logic: Text Report Module
 
-The Text Report Module generates human-readable Markdown summaries for Telegram.
+The Text Report Module generates clean Markdown summaries for Telegram.
 
-- **Periods:** Daily, Weekly, Monthly.
-- **Metrics:** Equity, Total Return, Win Rate, Max Drawdown, and recent trades list.
-- **Formatting:** Optimized for mobile display with clean emojis and Markdown.
+- **Source Code:** `utils/text_report.py`.
+- **Logic:** Fetches data from `TradingDatabase`, filters per timeframe, calculates metrics via `utils/performance.py`, and returns a single Markdown string.
+- **Support:** Daily, Weekly, and Monthly reports.
 - **Status:** Production-ready.
 
 ## Module Logic: Telegram Integration Module

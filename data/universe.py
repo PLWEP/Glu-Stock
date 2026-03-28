@@ -210,7 +210,7 @@ class UniverseManager:
             })
 
         if not scores:
-            return []
+            return [], {}
 
         # Convert to DataFrame for normalization
         scores_df = pd.DataFrame(scores)

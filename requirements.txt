@@ -1,0 +1,10 @@
+pandas
+yfinance
+ta
+schedule
+requests
+pyyaml
+python-dotenv
+psutil
+tenacity
+numpy

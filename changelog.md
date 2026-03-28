@@ -1,5 +1,20 @@
 # Changelog
 
+## [v3.1.0] - 2026-03-28
+
+### Added
+- `termux_setup.sh`: Automated environment setup for Android/Termux environments.
+- `requirements.txt`: Consolidated production dependency list.
+
+### Fixed
+- Fixed `rank_stocks` unpack error when universe is empty.
+- Restored missing `data/database.py` and `utils/performance.py` modules.
+- Standardized portfolio status keys across the engine.
+
+### Removed
+- Legacy HTML reporting module (`reporting/report.py`) in favor of pure Telegram monitoring.
+- `matplotlib` dependency for reduced footprint in mobile environments.
+
 ## [v1.5.0] - 2026-03-28
 
 ### Added
