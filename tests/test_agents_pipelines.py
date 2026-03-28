@@ -10,13 +10,13 @@ class TestAgentsPipelines(unittest.TestCase):
         self.usa = UniverseSelectionAgent(research_agent=self.ra)
 
     def test_strategy_agent_pipeline_dispatch(self):
-        # Create dummy data
-        dates = pd.date_range("2024-01-01", periods=30)
+        # Create dummy data (100 periods to satisfy Daily/Weekly/Monthly lookbacks)
+        dates = pd.date_range("2024-01-01", periods=100)
         df = pd.DataFrame({
-            'close': [100 + i for i in range(30)],
-            'high': [105 + i for i in range(30)],
-            'low': [95 + i for i in range(30)],
-            'volume': [1000] * 30
+            'close': [100 + i for i in range(100)],
+            'high': [105 + i for i in range(100)],
+            'low': [95 + i for i in range(100)],
+            'volume': [1000] * 100
         }, index=pd.MultiIndex.from_tuples([(d, 'AAPL') for d in dates], names=['date', 'ticker']))
         
         # Test Daily

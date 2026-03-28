@@ -5,45 +5,35 @@ import ta
 class WeeklyStrategy:
     """
     Swing Trading Strategy.
-    3 EMA T-Alignment + RSI + MACD + Pairs Trading Logic.
+    3 EMA T-Alignment (3, 10, 21) + RSI + MACD.
     """
-    def generate_signals(self, df: pd.DataFrame, paper_trading: bool = False) -> pd.DataFrame:
-        if df.empty: return df
+    def generate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
+        if df.empty or len(df) < 50: return df
         
-        # 1. 3 EMA (3, 10, 21)
+        # 1. 3 EMA Alignment (MA3 > MA10 > MA21)
         df['ema3'] = df['close'].ewm(span=3).mean()
         df['ema10'] = df['close'].ewm(span=10).mean()
         df['ema21'] = df['close'].ewm(span=21).mean()
         
-        # 2. RSI (50-60 zone)
+        # 2. RSI (50-60 zone focus)
         df['rsi'] = ta.momentum.RSIIndicator(df['close'], window=14).rsi()
         
         # 3. MACD
         macd = ta.trend.MACD(df['close'])
-        df['macd_diff'] = macd.macd_diff()
         df['macd'] = macd.macd()
+        df['macd_signal'] = macd.macd_signal()
         
-        # 4. Standard Swing Signal (Long-Only for Live)
+        # 4. Signal Logic
         df['final_signal'] = 0
-        df['final_score'] = 0.5
         
+        # LONG: EMA Alignment + RSI in 50-60 zone + MACD > Signal
         trend_up = (df['ema3'] > df['ema10']) & (df['ema10'] > df['ema21'])
         rsi_zone = (df['rsi'] >= 50) & (df['rsi'] <= 60)
-        macd_cross = (df['macd_diff'] > 0) & (df['macd'] > 0)
+        macd_up = (df['macd'] > df['macd_signal']) & (df['macd'] > 0)
         
-        long_condition = trend_up & rsi_zone & macd_cross
-        df.loc[long_condition, 'final_signal'] = 1
-        df.loc[long_condition, 'final_score'] = 0.9
+        df.loc[trend_up & rsi_zone & macd_up, 'final_signal'] = 1
         
-        # 5. Pairs Trading Logic (Demeaned Return) - Placeholder for multi-ticker logic
-        # For a single ticker, we'll store signal for audit if paper_trading
-        if paper_trading:
-            # Simulated Short for mispricing (Z-score > 2)
-            # This would normally require a second ticker, but we'll mark it as potential Short canddiate
-            df['short_porsi'] = 0
-            df.loc[df['rsi'] > 75, 'short_porsi'] = -1
-            
-        # Stop Loss (Liquidasi saat MA1 <= MA2)
+        # Exit (Liquidasi) if EMA trend closes
         exit_condition = (df['ema3'] <= df['ema10'])
         df.loc[exit_condition, 'final_signal'] = 0
         

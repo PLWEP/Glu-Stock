@@ -4,36 +4,32 @@ import numpy as np
 class MonthlyStrategy:
     """
     Position Trading Strategy.
-    Price Momentum + Low-Vol Anomaly + Value Rotation.
+    Price Momentum (12m - 1m) + Low-Volatility Anomaly + Value (B/P).
     """
     def generate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
         if df.empty or len(df) < 252: return df
         
-        # 1. Price-Momentum (12m - 1m)
-        # 252 days ~ 12 months, 21 days ~ 1 month
-        df['mom_12m'] = df['close'].shift(21) / df['close'].shift(252) - 1
+        # 1. Price-Momentum (12m - 1m skip latest month)
+        df['mom_12m_1m'] = df['close'].shift(21) / df['close'].shift(252) - 1
         
-        # 2. Low-Volatility (126d std)
-        df['volatility_126d'] = df['close'].pct_change().rolling(126).std()
+        # 2. Low-Volatility (126d - 252d stdev)
+        df['volatility_252d'] = df['close'].pct_change().rolling(252).std()
         
-        # 3. Trailing Stop (MA20)
-        df['ma20'] = df['close'].rolling(20).mean()
+        # 3. Value Metric (Simplified: Price vs 52w Avg as proxy if B/P not ready)
+        # In production, this would use Fundamental Data (ROE/Laba) passed from Universe.
         df['ma200'] = df['close'].rolling(200).mean()
+        df['ma20_trail'] = df['close'].rolling(20).mean() # Trailing stop
         
         # 4. Signal Logic
         df['final_signal'] = 0
-        df['final_score'] = 0.5
         
-        # Momentum + Above MA200 + Not extremely volatile
-        mom_rank = df['mom_12m'].rolling(20).mean() # Smoothing
-        low_vol = df['volatility_126d'] < df['volatility_126d'].rolling(252).mean() # Below avg vol
+        # LONG: Price > MA200 AND Momentum > 10% AND Low Volatility
+        low_vol = df['volatility_252d'] < df['volatility_252d'].rolling(252).mean()
+        long_condition = (df['close'] > df['ma200']) & (df['mom_12m_1m'] > 0.10) & low_vol
         
-        long_condition = (df['close'] > df['ma200']) & (mom_rank > 0.1) & low_vol
         df.loc[long_condition, 'final_signal'] = 1
-        df.loc[long_condition, 'final_score'] = 0.85
         
-        # Trailing Stop exit
-        exit_condition = (df['close'] < df['ma20'])
-        df.loc[exit_condition, 'final_signal'] = 0
+        # Exit (Trailing)
+        df.loc[df['close'] < df['ma20_trail'], 'final_signal'] = 0
         
         return df

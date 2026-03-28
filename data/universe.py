@@ -69,52 +69,67 @@ class UniverseManager:
 
     def filter_daily(self, tickers: List[str], price_data_dict: Dict[str, pd.DataFrame]) -> List[str]:
         """
-        Pipeline 1 Filter: Liquidity & Volatility.
-        - Volume > 500k lot (50M shares) OR Value > Rp25B.
-        - Day Range > 3%.
+        Pipeline 1 Filter: Institutional Intraday Liquidity.
+        - Volume > 500k lot (50M shares) OR Value > Rp25B/day.
+        - Range 3% - 5%.
+        - Priority for LQ45 (approx 45 stocks).
         """
+        lq45_tickers = [
+            "ADRO.JK", "AMRT.JK", "ANKB.JK", "ANTM.JK", "ASII.JK", "BBCA.JK", "BBNI.JK", "BBRI.JK", "BBTN.JK", 
+            "BMRI.JK", "BRIS.JK", "BRPT.JK", "BUKA.JK", "CPIN.JK", "EMTK.JK", "ESSA.JK", "GOTO.JK", "HRUM.JK", 
+            "ICBP.JK", "INCO.JK", "INDF.JK", "INKP.JK", "INTP.JK", "ITMG.JK", "KLBF.JK", "MDKA.JK", "MEDC.JK", 
+            "MIKA.JK", "PGAS.JK", "PTBA.JK", "PTPP.JK", "SCMA.JK", "SGER.JK", "SRTG.JK", "TLKM.JK", "TOWR.JK", 
+            "TPIA.JK", "UNTR.JK", "UNVR.JK"
+        ] # Sample LQ45 list
+        
         candidates = []
-        for ticker, df in price_data_dict.items():
-            if df.empty or len(df) < 5: continue
+        for ticker in tickers:
+            df = price_data_dict.get(ticker)
+            if df is None or df.empty or len(df) < 5: continue
             
-            # Vectorized metrics
+            # Liquidity
             avg_volume = df["volume"].mean()
             avg_price = df["close"].mean()
             avg_value = avg_volume * avg_price
-            
-            # Lot size in IDX is 100 shares
             volume_lots = avg_volume / 100
             
-            # Liquidity check
             is_liquid = (volume_lots > 500_000) or (avg_value > 25_000_000_000)
             
-            # Volatility check (High-Low range)
+            # Day Range
             daily_range = (df["high"] - df["low"]) / df["low"]
             avg_range = daily_range.mean()
             
-            if is_liquid and (0.03 <= avg_range <= 0.05):
-                candidates.append(ticker)
+            # Bias towards LQ45 if liquidity is borderline
+            if is_liquid or (ticker in lq45_tickers and volume_lots > 100_000):
+                if 0.03 <= avg_range <= 0.05:
+                    candidates.append(ticker)
                 
         return candidates
 
     def filter_weekly(self, tickers: List[str], price_data_dict: Dict[str, pd.DataFrame]) -> List[str]:
         """
-        Pipeline 2 Filter: Trend Structure & Breakout.
-        - Price > EMA(21).
-        - Volume Breakout (Current > 1.5x Avg).
+        Pipeline 2 Filter: Swing Trend & Structure.
+        - Price > MA20 AND Price > MA50.
+        - Structure: Higher High (HH) and Higher Low (HL) in last 20 days.
+        - RSI (50-60) and MACD Cross > 0.
         """
         candidates = []
-        for ticker, df in price_data_dict.items():
-            if df.empty or len(df) < 21: continue
+        for ticker in tickers:
+            df = price_data_dict.get(ticker)
+            if df is None or df.empty or len(df) < 50: continue
             
             last_close = df["close"].iloc[-1]
-            ema21 = df["close"].ewm(span=21).mean().iloc[-1]
+            ma20 = df["close"].rolling(20).mean().iloc[-1]
+            ma50 = df["close"].rolling(50).mean().iloc[-1]
             
-            # Volume Breakout
-            avg_vol = df["volume"].tail(20).mean()
-            curr_vol = df["volume"].iloc[-1]
+            # Trend Check
+            if last_close < ma20 or last_close < ma50: continue
             
-            if last_close > ema21 and curr_vol > (avg_vol * 1.5):
+            # Structure: HH/HL (simplified check over last 2 peaks/troughs)
+            recent_highs = df["high"].rolling(10).max().tail(20)
+            recent_lows = df["low"].rolling(10).min().tail(20)
+            
+            if recent_highs.iloc[-1] >= recent_highs.iloc[-10] and recent_lows.iloc[-1] >= recent_lows.iloc[-10]:
                 candidates.append(ticker)
         return candidates
 

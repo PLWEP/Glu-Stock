@@ -61,6 +61,13 @@ class PipelineOrchestrator:
         scanned_count = len(tickers)
         self.logger.info(f"Orchestrator: [STEP 1/3] Scanned {scanned_count} tickers. Selecting Top {len(selected_stocks)}.")
         
+        # Determine Interval based on pipeline
+        # Daily: 15m for intraday signals (Need to fetch enough history for indicators)
+        interval = "15m" if pipeline == "daily" else "1d"
+        # Adjusted start_date for intraday to stay within yfinance limits (60 days for 15m)
+        if interval == "15m":
+            start_date = (datetime.now() - timedelta(days=59)).strftime("%Y-%m-%d")
+
         # Collect candidates for reporting
         self.results["candidates"] = [{"ticker": t, "score": 0.0} for t in selected_stocks] # Placeholder or map from Universe agent
 
@@ -69,7 +76,7 @@ class PipelineOrchestrator:
             self.logger.info(f"Orchestrator: Processing [{ticker}]...")
             try:
                 # A. Research
-                df = self.research_agent.research([ticker], start_date, end_date)
+                df = self.research_agent.research([ticker], start_date, end_date, interval=interval)
                 if df.empty:
                     continue
                 

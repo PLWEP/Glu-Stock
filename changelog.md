@@ -1,5 +1,20 @@
 # Changelog
 
+## [v1.5.0] - 2026-03-28
+
+### Added
+
+- Multi-interval data support (1d, 15m, 1h) in `StockDataHandler` and `ResearchAgent`.
+- Intraday ISO timestamp caching for high-frequency signal generation.
+- Institutional Daily Pipeline: 15m Pivot Points ($R=2C-P_L$, $S=2C-P_H$), Donchian, and VWAP guards.
+- Institutional Weekly Pipeline: 3-EMA (3, 10, 21) trend alignment and MA20/50 confirmation.
+- Institutional Monthly Pipeline: 12m Momentum (skip 1m), Low-Volatility anomaly, and ROE/Laba tiered filtering.
+
+### Changed
+
+- `UniverseManager` now enforces Rp25B/500k lot liquidity floor and prioritizes LQ45/Kompas100.
+- `Orchestrator` dynamically dispatches intervals based on pipeline selection.
+
 ## [v1.4.0] - 2026-03-28
 
 ### Added

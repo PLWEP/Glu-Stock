@@ -19,9 +19,10 @@ class ResearchAgent:
         self.data_handler = StockDataHandler()
         self.feature_engineer = FeatureEngineer()
 
-    def research(self, tickers: List[str], start_date: str, end_date: str) -> pd.DataFrame:
-        print(f"ResearchAgent: Fetching data for {tickers}...")
-        df = self.data_handler.fetch_data(tickers, start_date, end_date)
+    def research(self, tickers: List[str], start_date: str, end_date: str, interval: str = "1d") -> pd.DataFrame:
+        """ Fetches and preprocesses stock data with multi-interval support. """
+        print(f"ResearchAgent: Fetching data for {tickers} (interval={interval})...")
+        df = self.data_handler.fetch_data(tickers, start_date, end_date, interval=interval)
         
         print("ResearchAgent: Adding technical indicators...")
         df = self.feature_engineer.add_indicators(df)
@@ -38,22 +39,12 @@ class StrategyAgent:
         }
         self.backtester = VectorizedBacktester()
 
-    def get_recommendations(self, df: pd.DataFrame, pipeline: str = "daily", paper_trading: bool = False) -> pd.DataFrame:
-        """
-        Generates trading signals for a specific pipeline.
-        Handles paper_trading=True for Short porsi visibility.
-        """
-        print(f"StrategyAgent: Generating signals for [{pipeline}] pipeline (Paper Trading: {paper_trading})...")
-        strategy = self.pipelines.get(pipeline.lower())
+    def get_recommendations(self, df: pd.DataFrame, pipeline: str = "daily") -> pd.DataFrame:
+        strategy = self.pipelines[pipeline]
         
-        if strategy is None:
-            raise ValueError(f"Unknown pipeline: {pipeline}. Supported: {list(self.pipelines.keys())}")
-            
-        # Support for paper_trading flag if the strategy supports it
-        if hasattr(strategy, "generate_signals") and "paper_trading" in strategy.generate_signals.__code__.co_varnames:
-            return strategy.generate_signals(df, paper_trading=paper_trading)
-        else:
-            return strategy.generate_signals(df)
+        # Daily signals usually need higher frequency (15m) processed in df
+        # Weekly/Monthly use Daily (1d) processed in df
+        return strategy.generate_signals(df)
 
     def validate_strategy(self, df: pd.DataFrame) -> Dict[str, Any]:
         print("StrategyAgent: Validating strategy with backtest...")
@@ -72,39 +63,46 @@ class UniverseSelectionAgent:
         self.logger = JsonLogger(log_file="logs/universe_selection.log")
 
     def select_universe(self, max_stocks: int, start_date: str, end_date: str, pipeline: str = "daily") -> List[str]:
-        """
-        Executes the selection pipeline based on the requested strategy timeframe.
-        - global filter -> pipeline filter -> research -> ranking.
-        """
-        self.logger.info(f"UniverseSelectionAgent: Curating for [{pipeline}] pipeline (Max: {max_stocks})")
-        
-        # 1. Global Filter (Hard Exclusion)
+        """ Specialized selection flow with pipeline-specific filtering. """
+        # 1. Global Filter (Metadata Level)
         all_metadata = self.universe_manager.get_idx_tickers()
-        global_filtered = self.universe_manager.filter_global(all_metadata)
-        tickers = global_filtered["ticker"].tolist()
-        
-        # 2. Sequential Research (Needed for technical filters)
-        df_researched = self.research_agent.research(tickers, start_date, end_date)
-        price_data_dict = self.universe_manager.partition_price_data(df_researched, tickers)
-        
-        # 3. Pipeline Specific Filtering
-        if pipeline.lower() == "daily":
-            selected_tickers = self.universe_manager.filter_daily(tickers, price_data_dict)
-        elif pipeline.lower() == "weekly":
-            selected_tickers = self.universe_manager.filter_weekly(tickers, price_data_dict)
-        elif pipeline.lower() == "monthly":
-            # Mock or fetch fundamental data for ROI/Laba YoY
-            fundamental_data = {t: {"returnOnEquity": 0.15, "netIncomeGrowth": 0.1} for t in tickers} # Placeholder
-            selected_tickers = self.universe_manager.filter_monthly(tickers, price_data_dict, fundamental_data)
-        else:
-            selected_tickers = tickers # Fallback
+        global_pool = self.universe_manager.filter_global(all_metadata)
+        tickers = global_pool["ticker"].tolist()
+
+        # 2. Research (Technical Data)
+        print(f"UniverseSelectionAgent: Initial technical scan for {len(tickers)} stocks...")
+        price_df = self.research_agent.research(tickers, start_date, end_date, interval="1d")
+        price_data_dict = self.universe_manager.partition_price_data(price_df, tickers)
+
+        # 3. Pipeline Filter
+        if pipeline == "daily":
+            candidates = self.universe_manager.filter_daily(tickers, price_data_dict)
+        elif pipeline == "weekly":
+            candidates = self.universe_manager.filter_weekly(tickers, price_data_dict)
+        elif pipeline == "monthly":
+            # Tiered Monthly: Trend Filter -> Fundamental Fetch -> Final Selection
+            # First pass: Technicals (MA200)
+            tech_candidates = [t for t, df in price_data_dict.items() if len(df) >= 200 and df["close"].iloc[-1] > df["close"].rolling(200).mean().iloc[-1]]
             
-        # 4. Final Ranking (Multi-Factor)
-        top_tickers, all_scores = self.universe_manager.rank_stocks(
-            global_filtered[global_filtered["ticker"].isin(selected_tickers)],
-            price_data_dict,
-            top_n=max_stocks
-        )
+            print(f"UniverseSelectionAgent: Fetching fundamentals for {len(tech_candidates)} momentum candidates...")
+            fundamentals = {}
+            import yfinance as yf
+            for t in tech_candidates[:50]: # Limit to top 50 to avoid timeout
+                try:
+                    info = yf.Ticker(t).info
+                    fundamentals[t] = {
+                        "returnOnEquity": info.get("returnOnEquity", 0),
+                        "netIncomeGrowth": info.get("netIncomeToCommon", 0) # Proxy for laba
+                    }
+                except: continue
+                
+            candidates = self.universe_manager.filter_monthly(tech_candidates, price_data_dict, fundamentals)
+        else:
+            candidates = tickers
+
+        # 4. Rank and Select
+        print(f"UniverseSelectionAgent: Ranking {len(candidates)} candidates...")
+        top_tickers, _ = self.universe_manager.rank_stocks(global_pool[global_pool["ticker"].isin(candidates)], price_data_dict, top_n=max_stocks)
         
         self.logger.info("UniverseSelectionAgent: Selection complete", selected=top_tickers)
         return top_tickers
