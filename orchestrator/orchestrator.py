@@ -8,6 +8,7 @@ from utils.alerts import send_telegram_alert
 from utils.text_report import TextReportGenerator
 from utils.config import ConfigLoader
 from utils.logger import JsonLogger
+from utils.persistence import SignalPersistence
 
 class PipelineOrchestrator:
     """
@@ -17,6 +18,7 @@ class PipelineOrchestrator:
 
     def __init__(self, initial_cash: float = 100000.0, output_dir: str = "reporting/exports"):
         self.logger = JsonLogger(log_file="logs/orchestrator.log")
+        self.persistence = SignalPersistence()
         self.research_agent = ResearchAgent()
         self.strategy_agent = StrategyAgent()
         self.trading_agent = TradingAgent(initial_cash=initial_cash)
@@ -24,10 +26,11 @@ class PipelineOrchestrator:
         self.report_generator = ReportGenerator(output_dir=output_dir)
         self.results = {"success": [], "failure": [], "candidates": []}
 
-    def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: Optional[str] = None, end_date: Optional[str] = None, pipeline: str = "daily") -> Dict[str, Any]:
+    def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: Optional[str] = None, end_date: Optional[str] = None, pipeline: str = "daily", send_alert: bool = False) -> Dict[str, Any]:
         """
         Coordinates the institutional trading lifecycle.
-        Supports 'daily', 'weekly', and 'monthly' pipelines.
+        If send_alert=True, it will trigger Telegram immediately.
+        Otherwise, it only saves signals to persistence for later broadcast.
         """
         config = ConfigLoader().get_config()
         paper_trading = config.get("paper_trading", True)
@@ -121,13 +124,28 @@ class PipelineOrchestrator:
         final_summary = self._consolidate_results(all_data)
         
         # Institutional Signal Report
-        signal_report = self.generate_signal_report(pipeline)
-        send_telegram_alert(signal_report)
+        self.persistence.save_signals(pipeline, self.results["candidates"])
+        
+        if send_alert:
+            signal_report = self.generate_signal_report(pipeline)
+            send_telegram_alert(signal_report)
         
         self._generate_final_report(final_summary)
         
         self.logger.info(f"Orchestrator: Aggregation complete, tickers_processed={len(final_summary['tickers_processed'])}")
         return final_summary
+
+    def broadcast_saved_signals(self, pipeline: str):
+        """ Instantly sends the Telegram report using saved persistence data. """
+        self.logger.info(f"Orchestrator: Broadcasting saved signals for [{pipeline}]...")
+        saved_candidates = self.persistence.load_signals(pipeline)
+        
+        # Temporarily fill results for report generation
+        self.results["candidates"] = saved_candidates
+        
+        report = self.generate_signal_report(pipeline)
+        send_telegram_alert(report)
+        self.logger.info(f"Orchestrator: Broadcast complete for [{pipeline}].")
 
     def generate_signal_report(self, pipeline: str) -> str:
         """ Formats the signal report for Telegram based on user request. """
