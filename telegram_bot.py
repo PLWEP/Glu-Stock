@@ -4,7 +4,7 @@ import json
 import os
 from typing import Dict, Any, Optional
 from utils.config import ConfigLoader
-from data.database import TradingDatabase
+from utils.config import ConfigLoader
 from utils.logger import JsonLogger
 from utils.text_report import TextReportGenerator
 from orchestrator.orchestrator import PipelineOrchestrator
@@ -20,7 +20,6 @@ class TelegramBot:
         self.token = os.environ.get("TELEGRAM_BOT_TOKEN")
         self.chat_id = os.environ.get("TELEGRAM_CHAT_ID")
         self.api_url = f"https://api.telegram.org/bot{self.token}"
-        self.db = TradingDatabase()
         self.logger = JsonLogger(log_file="logs/telegram_bot.log")
         self.orchestrator = PipelineOrchestrator()
         self.reporter = TextReportGenerator()
