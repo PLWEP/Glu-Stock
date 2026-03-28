@@ -56,23 +56,26 @@ async function startPolling() {
     const sock = await connectToWhatsApp(false);
 
     sock.ev.on("messages.upsert", async (m) => {
-        if (m.type !== "notify") return;
+        // Broaden event types to include 'append' (often used for self-messages/sync)
+        if (m.type !== "notify" && m.type !== "append") return;
+        
         const msg = m.messages[0];
         if (!msg.message) return;
 
         const sender = msg.key.remoteJid;
         const isFromMe = msg.key.fromMe;
-        const body = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
+        const body = msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.buttonsResponseMessage?.selectedButtonId || "";
         
+        // Diagnostic Logging
+        const senderNumber = sender.split("@")[0];
+        const ownerNumber = sock.user.id ? sock.user.id.split(":")[0].split("@")[0] : null;
+        
+        console.log(`[DEBUG] Received message from ${senderNumber}: "${body.substring(0, 30)}" (fromMe: ${isFromMe}, eventType: ${m.type})`);
+
         if (!body.startsWith("/")) return;
 
-        // Extract sender number
-        const senderNumber = sender.split("@")[0];
-        const ownerNumber = sock.user.id.split(":")[0];
-
         // Authorization Check
-        // Allow if: sender is in AUTHORIZED_NUMBERS OR it's a message from owner to themselves
-        const isAuthorized = AUTHORIZED_NUMBERS.includes(senderNumber) || (isFromMe && senderNumber === ownerNumber);
+        const isAuthorized = AUTHORIZED_NUMBERS.includes(senderNumber) || (senderNumber === ownerNumber);
 
         if (AUTHORIZED_NUMBERS.length > 0 && !isAuthorized) {
             console.log(`WhatsApp: Unauthorized access attempt from ${senderNumber}`);
@@ -82,11 +85,13 @@ async function startPolling() {
 
         // Avoid infinite loop: don't process commands sent BY the bot account TO others
         // unless it's a command sent TO itself (self-chat)
-        if (isFromMe && senderNumber !== ownerNumber) return;
+        if (isFromMe && senderNumber !== ownerNumber) {
+            console.log(`[DEBUG] Skipping command sent to another person (${senderNumber})`);
+            return;
+        }
 
-        console.log(`WhatsApp: Received [ ${body} ] from ${senderNumber}${isFromMe ? " (Self)" : ""}`);
+        console.log(`WhatsApp: Processing command [ ${body} ] from ${senderNumber}`);
 
-        // Handle /start specifically with a better menu
         const cmd = body.split(" ")[0].toLowerCase();
         if (cmd === "/start") {
             let menu = "✨ *KENDALI TRADING WHATSAPP* ✨\n\n";
