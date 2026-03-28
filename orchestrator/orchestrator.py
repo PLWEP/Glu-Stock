@@ -6,6 +6,8 @@ from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSe
 from reporting.report import ReportGenerator
 from utils.alerts import send_telegram_alert
 from utils.history import StrategicHistoryManager
+from utils.sysinfo import SysInfo
+import gc
 from utils.text_report import TextReportGenerator
 from backtesting.backtest import VectorizedBacktester
 from portfolio.portfolio import Portfolio
@@ -23,6 +25,7 @@ class PipelineOrchestrator:
         self.logger = JsonLogger(log_file="logs/orchestrator.log")
         self.persistence = SignalPersistence()
         self.history_manager = StrategicHistoryManager()
+        self.sys_info = SysInfo()
         self.results = {"candidates": [], "success": [], "errors": []}
         self.research_agent = ResearchAgent()
         self.strategy_agent = StrategyAgent()
@@ -134,6 +137,9 @@ class PipelineOrchestrator:
         self.logger.info(f"Orchestrator: [STEP 2/3] Found {candidate_count} candidates for execution.")
         self.logger.info(f"Orchestrator: [STEP 3/3] Processed {trade_count} execution attempts.")
         self.history_manager.log_event(pipeline, "SCAN_END", details=f"Candidates found: {candidate_count}")
+        
+        # Memory Cleanup (Critical for Termux)
+        gc.collect()
 
         # 3. Forced Reporting (Always Runs)
         self.logger.info("Orchestrator: Finalizing session and forced reporting...")
@@ -359,6 +365,10 @@ class PipelineOrchestrator:
             title = f"📜 History: {filter_val or 'Recent'}"
             
         return self._format_history_report(events, title)
+
+    def handle_status_command(self) -> str:
+        """ Returns full system health and hardware report. """
+        return self.sys_info.get_full_report()
 
     def _format_history_report(self, events: List[Dict[str, Any]], title: str) -> str:
         """ Formats history events into a Telegram-friendly Markdown table. """

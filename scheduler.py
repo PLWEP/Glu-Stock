@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from utils.config import ConfigLoader
 from utils.logger import JsonLogger
 from orchestrator.orchestrator import PipelineOrchestrator
+import gc
 
 class TradingScheduler:
     """
@@ -36,6 +37,7 @@ class TradingScheduler:
                 send_alert=False
             )
             self.logger.info(f"Scheduler: [{pipeline}] scan complete. Signals persisted.")
+            gc.collect() # Clear memory after heavy scan
         except Exception as e:
             self.logger.error(f"Scheduler: Scan failure for [{pipeline}]", error=str(e))
 
@@ -115,7 +117,11 @@ class TradingScheduler:
         
         try:
             while True:
-                schedule.run_pending()
+                try:
+                    schedule.run_pending()
+                except Exception as e:
+                    self.logger.error("Scheduler: Critical loop error, attempting to continue...", error=str(e))
+                
                 time.sleep(60) # Only check every minute to save resources
         except KeyboardInterrupt:
             self.logger.info("Scheduler: Shutdown requested by user.")

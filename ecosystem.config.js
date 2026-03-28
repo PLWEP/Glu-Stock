@@ -1,21 +1,20 @@
 module.exports = {
 	apps: [
 		{
-			name: "Glu-Stock-Engine",
-			script: "main.py",
-			cwd: "c:/Users/MP2NE93D/Documents/PLWEP/Glu-Stock",
-			interpreter: "c:/Users/MP2NE93D/miniconda3/python.exe",
-			cron_restart: "0 9 * * 1-5", // Every weekday at 09:00 AM
-			autorestart: false, // Let cron manage the scheduled starts
-			max_memory_restart: "500M", // Safe memory limit
+			name: "glu-stock-engine",
+			script: "scheduler.py",
+			args: "--loop",
+			// interpreter: "c:/Users/MP2NE93D/miniconda3/python.exe", // Windows PATH
+			interpreter: "python", // Standard for Termux/Linux
+			instances: 1,
+			autorestart: true,
+			watch: false,
+			max_memory_restart: "400M", // Guard against memory leaks in Termux
+			exp_backoff_restart_delay: 5000, // Wait 5s before restart on failure
 			env: {
-				PYTHONPATH: ".",
 				PYTHONUNBUFFERED: "1",
-				NODE_ENV: "production",
+				TZ: "Asia/Jakarta",
 			},
-			error_file: "logs/pm2_error.log",
-			out_file: "logs/pm2_out.log",
-			log_date_format: "YYYY-MM-DD HH:mm:ss",
 		},
 	],
 };
