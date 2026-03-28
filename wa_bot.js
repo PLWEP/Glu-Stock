@@ -56,64 +56,32 @@ async function startPolling() {
     const sock = await connectToWhatsApp(false);
 
     sock.ev.on("messages.upsert", async (m) => {
-        // Broaden event types to include 'append' (often used for self-messages/sync)
-        if (m.type !== "notify" && m.type !== "append") return;
-        
+        if (m.type !== "notify") return;
         const msg = m.messages[0];
-        if (!msg.message) return;
+        if (!msg.message || msg.key.fromMe) return;
 
         const sender = msg.key.remoteJid;
-        const isFromMe = msg.key.fromMe;
-        const body = msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.buttonsResponseMessage?.selectedButtonId || "";
+        const body = msg.message.conversation || msg.message.extendedTextMessage?.text || "";
         
-        // Diagnostic Logging
-        const senderNumber = sender.split("@")[0];
-        const ownerNumber = sock.user.id ? sock.user.id.split(":")[0].split("@")[0] : null;
-        
-        console.log(`[DEBUG] Received message from ${senderNumber}: "${body.substring(0, 30)}" (fromMe: ${isFromMe}, eventType: ${m.type})`);
-
         if (!body.startsWith("/")) return;
 
-        // Authorization Check
-        const isAuthorized = AUTHORIZED_NUMBERS.includes(senderNumber) || (senderNumber === ownerNumber);
-
-        if (AUTHORIZED_NUMBERS.length > 0 && !isAuthorized) {
+        const senderNumber = sender.split("@")[0];
+        if (AUTHORIZED_NUMBERS.length > 0 && !AUTHORIZED_NUMBERS.includes(senderNumber)) {
             console.log(`WhatsApp: Unauthorized access attempt from ${senderNumber}`);
-            if (!isFromMe) await sock.sendMessage(sender, { text: "💔 Maaf, nomor kamu belum terdaftar di sistem Ayang." });
+            await sock.sendMessage(sender, { text: "💔 Maaf sayang, nomor kamu belum terdaftar di hati Ayang..." });
             return;
         }
 
-        // Avoid infinite loop: don't process commands sent BY the bot account TO others
-        // unless it's a command sent TO itself (self-chat)
-        if (isFromMe && senderNumber !== ownerNumber) {
-            console.log(`[DEBUG] Skipping command sent to another person (${senderNumber})`);
-            return;
-        }
-
-        console.log(`WhatsApp: Processing command [ ${body} ] from ${senderNumber}`);
-
-        const cmd = body.split(" ")[0].toLowerCase();
-        if (cmd === "/start") {
-            let menu = "✨ *KENDALI TRADING WHATSAPP* ✨\n\n";
-            menu += "Silakan ketik perintah di bawah ini:\n\n";
-            menu += "🎯 */signals daily* - Sinyal Saham\n";
-            menu += "📊 */portfolio daily* - Rekap Tabungan\n";
-            menu += "🔋 */status* - Kondisi HP\n";
-            menu += "📜 */history* - Catatan Transaksi\n";
-            menu += "📂 */logs* - Log Sistem\n\n";
-            menu += "_Ayang siap membantu menjaga tradingmu!_ 💖";
-            await sock.sendMessage(sender, { text: menu });
-            return;
-        }
+        console.log(`WhatsApp: Received [ ${body} ] from ${senderNumber}`);
 
         const pythonCmd = `${PYTHON_PATH} telegram_bot.py --cmd "${body}"`;
         exec(pythonCmd, (error, stdout, stderr) => {
             let response = stdout.trim();
             if (error || stderr) {
                 console.error(`WhatsApp: Python execution error: ${stderr || error.message}`);
-                response = "💔 Waduh, ada gangguan teknis sedikit. Coba lagi nanti ya?";
+                response = "💔 Duh sayang, Ayang lagi pusing nih (Error executing command). Coba lagi nanti ya?";
             }
-            if (!response) response = "🌸 Selesai, tapi tidak ada data yang ditemukan.";
+            if (!response) response = "🌸 Ayang sudah kerjakan, tapi nggak ada laporannya nih...";
             
             sock.sendMessage(sender, { text: response });
         });
