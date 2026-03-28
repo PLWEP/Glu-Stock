@@ -268,10 +268,39 @@ class TelegramBot:
                 self.logger.error("Telegram: Polling error", error=error_msg)
                 time.sleep(5)
 
+    def run_command(self, cmd_text: str) -> str:
+        """ Specialized runner for a single command string, returns text result. """
+        cmd = cmd_text.split()[0].lower()
+        if cmd == "/start":
+            return "💖 *Halo Sayang!* Ayang siap bantu jagain trading kamu hari ini."
+        elif cmd == "/status":
+            return self.orchestrator.handle_status_command()
+        elif cmd == "/logs":
+            return self.orchestrator.handle_log_system_command("/log_system info 10")
+        elif cmd in ["/portfolio", "/recap"]:
+            pipeline = cmd_text.split()[1] if len(cmd_text.split()) > 1 else "daily"
+            return self.reporter.generate_report(1 if pipeline=="daily" else (7 if pipeline=="weekly" else 30), pipeline.capitalize())
+        elif cmd in ["/signals", "/alert"]:
+            pipeline = cmd_text.split()[1] if len(cmd_text.split()) > 1 else "daily"
+            return self.orchestrator.generate_signal_report(pipeline)
+        elif cmd == "/history":
+            return self.orchestrator.handle_history_command(cmd_text)
+        elif cmd in ["/log_system", "/log-system"]:
+            return self.orchestrator.handle_log_system_command(cmd_text)
+        return "❌ Ayang bingung sayang, perintah itu apa ya?"
+
 if __name__ == "__main__":
     import sys
     bot = TelegramBot()
     if "--test" in sys.argv:
         bot.test_telegram()
+    elif "--cmd" in sys.argv:
+        # Run a single command and print result
+        idx = sys.argv.index("--cmd")
+        if len(sys.argv) > idx + 1:
+            res = bot.run_command(sys.argv[idx + 1])
+            print(res)
+        else:
+            print("❌ No command provided for --cmd")
     else:
         bot.poll()
