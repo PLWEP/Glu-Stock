@@ -4,10 +4,13 @@ import json
 import os
 from typing import Dict, Any, Optional
 from utils.config import ConfigLoader
-from utils.config import ConfigLoader
 from utils.logger import JsonLogger
 from utils.text_report import TextReportGenerator
 from orchestrator.orchestrator import PipelineOrchestrator
+from dotenv import load_dotenv
+
+# Explicitly load .env from the same directory as this script
+load_dotenv()
 
 class TelegramBot:
     """
@@ -19,6 +22,12 @@ class TelegramBot:
         self.tel_config = self.config.get("telegram", {})
         self.token = os.environ.get("TELEGRAM_BOT_TOKEN")
         self.chat_id = os.environ.get("TELEGRAM_CHAT_ID")
+        
+        if not self.token:
+            print("❌ ERROR: TELEGRAM_BOT_TOKEN not found in environment!")
+        if not self.chat_id:
+            print("⚠️ WARNING: TELEGRAM_CHAT_ID not found in environment!")
+            
         self.api_url = f"https://api.telegram.org/bot{self.token}"
         self.logger = JsonLogger(log_file="logs/telegram_bot.log")
         self.orchestrator = PipelineOrchestrator()
@@ -37,21 +46,28 @@ class TelegramBot:
             {"command": "signals", "description": "🎯 Cek Sinyal Trading (Daily/Weekly)"},
             {"command": "portfolio", "description": "📊 Cek Rekap Portofolio"},
             {"command": "history", "description": "📜 Cek Histori Audit Strategis"},
-            {"command": "log_system", "description": "📂 Cek Log Internal Aplikasi"}
+            {"command": "log_system", "description": "📂 Cek Log Internal Aplikasi"},
+            {"command": "logs", "description": "📋 Tampilkan 10 Log terakhir"}
         ]
         try:
             requests.post(url, json={"commands": commands}, timeout=10)
             self.logger.info("Telegram: Commands registered successfully")
         except: pass
 
-    def send_message(self, text: str, reply_markup: Optional[Dict] = None):
+    def send_message(self, text: str, reply_markup: Optional[Dict] = None, target_chat_id: Optional[str] = None):
         """ Sends a message with optional inline keyboard. """
         if not self.tel_config.get("enabled"):
             return
         
         url = f"{self.api_url}/sendMessage"
+        cid = target_chat_id or self.chat_id
+        
+        if not cid:
+            self.logger.error("Telegram: No chat_id provided and TELEGRAM_CHAT_ID is missing")
+            return
+            
         payload = {
-            "chat_id": self.chat_id, 
+            "chat_id": cid, 
             "text": text, 
             "parse_mode": "Markdown"
         }
@@ -59,7 +75,9 @@ class TelegramBot:
             payload["reply_markup"] = reply_markup
             
         try:
-            requests.post(url, json=payload, timeout=10)
+            r = requests.post(url, json=payload, timeout=10)
+            if not r.json().get("ok"):
+                self.logger.error(f"Telegram: API error: {r.text}")
         except Exception as e:
             self.logger.error("Telegram: Failed to send", error=str(e))
 
@@ -162,42 +180,67 @@ class TelegramBot:
                     for update in res.get("result", []):
                         self.offset = update["update_id"] + 1
                         
-                        # Handle Buttons
-                        if "callback_query" in update:
-                            cq = update["callback_query"]
-                            text = cq.get("data", "")
-                            # Answer callback to remove loading state
-                            requests.post(f"{self.api_url}/answerCallbackQuery", json={"callback_query_id": cq["id"]})
-                        else:
-                            message = update.get("message", {})
+                        message = update.get("message", {})
+                        callback_query = update.get("callback_query", {})
+                        
+                        inc_chat_id = None
+                        if message:
+                            inc_chat_id = message.get("chat", {}).get("id")
                             text = message.get("text", "")
+                        elif callback_query:
+                            inc_chat_id = callback_query.get("message", {}).get("chat", {}).get("id")
+                            text = callback_query.get("data", "")
+                            # Answer callback
+                            requests.post(f"{self.api_url}/answerCallbackQuery", json={"callback_query_id": callback_query["id"]})
                         
                         if not text: continue
                         
                         cmd = text.split()[0].lower()
                         
+                        # Helper to send response back to the sender
+                        def reply(msg, markup=None):
+                            self.send_message(msg, markup, target_chat_id=inc_chat_id)
+
                         if cmd == "/start":
-                            self.handle_start()
+                            text_start = "🎮 *GLU-STOCK COMMAND CENTER*\n_Pilih aksi di bawah ini._"
+                            keyboard = {
+                                "inline_keyboard": [
+                                    [{"text": "🔋 Status", "callback_data": "/status"}, {"text": "📊 Portfolio", "callback_data": "/portfolio daily"}],
+                                    [{"text": "🚀 Signals", "callback_data": "/signals daily"}, {"text": "📜 History", "callback_data": "/history"}],
+                                    [{"text": "📂 Logs", "callback_data": "/logs"}]
+                                ]
+                            }
+                            reply(text_start, keyboard)
                         elif cmd == "/status":
-                            self.send_message(self.orchestrator.handle_status_command())
+                            reply(self.orchestrator.handle_status_command())
+                        elif cmd == "/logs":
+                            reply(self.orchestrator.handle_log_system_command("/log_system info 10"))
                         elif cmd in ["/portfolio", "/recap"]:
+                            # Note: broadcast functions might still use self.chat_id, but here we can at least handle direct requests
                             pipeline = text.split()[1] if len(text.split()) > 1 else "daily"
-                            self.orchestrator.broadcast_portfolio_status(pipeline)
+                            report = self.reporter.generate_report(1 if pipeline=="daily" else (7 if pipeline=="weekly" else 30), pipeline.capitalize())
+                            reply(report)
                         elif cmd in ["/signals", "/alert"]:
                             pipeline = text.split()[1] if len(text.split()) > 1 else "daily"
-                            self.orchestrator.broadcast_saved_signals(pipeline)
+                            signals = self.orchestrator.persistence.load_signals(pipeline)
+                            report = self.orchestrator.generate_signal_report(pipeline)
+                            reply(report)
                         elif cmd == "/history":
-                            self.send_message(self.orchestrator.handle_history_command(text))
+                            reply(self.orchestrator.handle_history_command(text))
                         elif cmd in ["/log_system", "/log-system"]:
-                            self.send_message(self.orchestrator.handle_log_system_command(text))
+                            reply(self.orchestrator.handle_log_system_command(text))
                         elif cmd.startswith("/report"):
                             self.handle_report(text)
+                else:
+                    self.logger.error(f"Telegram: Poll Failed: {res.get('description', 'Unknown Error')}")
                 
             except KeyboardInterrupt:
                 print("Telegram: Shutting down...")
                 break
             except Exception as e:
-                self.logger.error("Telegram: Polling error", error=str(e))
+                import traceback
+                error_msg = f"Telegram: Polling error: {str(e)}\n{traceback.format_exc()}"
+                self.logger.error("Telegram: Polling error", error=error_msg)
                 time.sleep(5)
 
 if __name__ == "__main__":

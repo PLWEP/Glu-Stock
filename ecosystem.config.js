@@ -16,5 +16,15 @@ module.exports = {
 				TZ: "Asia/Jakarta",
 			},
 		},
+		{
+			name: "glu-stock-bot",
+			script: "telegram_bot.py",
+			interpreter: "python",
+			autorestart: true,
+			max_memory_restart: "200M",
+			env: {
+				PYTHONUNBUFFERED: "1",
+			},
+		},
 	],
 };
