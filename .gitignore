@@ -74,4 +74,15 @@ venv.bak/
 # Project specific
 *.log
 .ipynb_checkpoints
+
+# Institutional Data & State (Local Only)
+data/*.db
+data/*.json
+logs/*.db
+logs/*.log
+execution/*.csv
+reporting/exports/*.html
+tests/*.db
+test_output.log
+.env
 ```
