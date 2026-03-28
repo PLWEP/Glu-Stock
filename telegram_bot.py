@@ -7,6 +7,7 @@ from utils.config import ConfigLoader
 from data.database import TradingDatabase
 from utils.logger import JsonLogger
 from utils.text_report import TextReportGenerator
+from orchestrator.orchestrator import PipelineOrchestrator
 
 class TelegramBot:
     """
@@ -21,31 +22,68 @@ class TelegramBot:
         self.api_url = f"https://api.telegram.org/bot{self.token}"
         self.db = TradingDatabase()
         self.logger = JsonLogger(log_file="logs/telegram_bot.log")
+        self.orchestrator = PipelineOrchestrator()
         self.reporter = TextReportGenerator()
         self.offset = 0
+        
+        # Register commands on startup
+        self.set_bot_commands()
 
-    def send_message(self, text: str):
-        """ Sends a message to the configured chat_id with strict debug logging. """
+    def set_bot_commands(self):
+        """ Registers command hints in the Telegram menu. """
+        url = f"{self.api_url}/setMyCommands"
+        commands = [
+            {"command": "start", "description": "🚀 Buka Command Center"},
+            {"command": "status", "description": "🔋 Cek Kondisi Termux (RAM/Bat)"},
+            {"command": "signals", "description": "🎯 Cek Sinyal Trading (Daily/Weekly)"},
+            {"command": "portfolio", "description": "📊 Cek Rekap Portofolio"},
+            {"command": "history", "description": "📜 Cek Histori Audit Strategis"},
+            {"command": "log_system", "description": "📂 Cek Log Internal Aplikasi"}
+        ]
+        try:
+            requests.post(url, json={"commands": commands}, timeout=10)
+            self.logger.info("Telegram: Commands registered successfully")
+        except: pass
+
+    def send_message(self, text: str, reply_markup: Optional[Dict] = None):
+        """ Sends a message with optional inline keyboard. """
         if not self.tel_config.get("enabled"):
             return
         
         url = f"{self.api_url}/sendMessage"
-        payload = {"chat_id": self.chat_id, "text": text, "parse_mode": "Markdown"}
-        
-        print(f"Telegram: Sending message to Telegram...")
+        payload = {
+            "chat_id": self.chat_id, 
+            "text": text, 
+            "parse_mode": "Markdown"
+        }
+        if reply_markup:
+            payload["reply_markup"] = reply_markup
+            
         try:
-            response = requests.post(url, json=payload, timeout=10)
-            if response.status_code == 200:
-                print("Telegram: Message sent successfully")
-            else:
-                print(f"Telegram: Failed with status {response.status_code}")
-                print(f"Telegram: Response: {response.text}")
-                self.logger.error("Telegram: API Error", status=response.status_code, body=response.text)
+            requests.post(url, json=payload, timeout=10)
         except Exception as e:
-            print(f"Telegram: CRITICAL ERROR: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            self.logger.error("Telegram: Failed to send message", error=str(e))
+            self.logger.error("Telegram: Failed to send", error=str(e))
+
+    def handle_start(self):
+        """ Sends the interactive Command Center. """
+        text = "🎮 *GLU-STOCK COMMAND CENTER*\n_Pilih aksi cepat di bawah ini atau ketik / untuk menu lengkap._"
+        keyboard = {
+            "inline_keyboard": [
+                [
+                    {"text": "🔋 Status", "callback_data": "/status"},
+                    {"text": "📊 Portfolio", "callback_data": "/portfolio daily"}
+                ],
+                [
+                    {"text": "🚀 Daily Signals", "callback_data": "/signals daily"},
+                    {"text": "🚀 Weekly Signals", "callback_data": "/signals weekly"}
+                ],
+                [
+                    {"text": "📜 Recent History", "callback_data": "/history"},
+                    {"text": "📂 Errors", "callback_data": "/log_system error"}
+                ]
+            ]
+        }
+        self.send_message(text, reply_markup=keyboard)
 
     def test_telegram(self):
         """ Standalone connectivity test. """
@@ -124,14 +162,36 @@ class TelegramBot:
                 if res.get("ok"):
                     for update in res.get("result", []):
                         self.offset = update["update_id"] + 1
-                        message = update.get("message", {})
-                        text = message.get("text", "")
                         
-                        if text == "/status":
-                            self.handle_status()
-                        elif text == "/portfolio":
-                            self.handle_portfolio()
-                        elif text.startswith("/report"):
+                        # Handle Buttons
+                        if "callback_query" in update:
+                            cq = update["callback_query"]
+                            text = cq.get("data", "")
+                            # Answer callback to remove loading state
+                            requests.post(f"{self.api_url}/answerCallbackQuery", json={"callback_query_id": cq["id"]})
+                        else:
+                            message = update.get("message", {})
+                            text = message.get("text", "")
+                        
+                        if not text: continue
+                        
+                        cmd = text.split()[0].lower()
+                        
+                        if cmd == "/start":
+                            self.handle_start()
+                        elif cmd == "/status":
+                            self.send_message(self.orchestrator.handle_status_command())
+                        elif cmd in ["/portfolio", "/recap"]:
+                            pipeline = text.split()[1] if len(text.split()) > 1 else "daily"
+                            self.orchestrator.broadcast_portfolio_status(pipeline)
+                        elif cmd in ["/signals", "/alert"]:
+                            pipeline = text.split()[1] if len(text.split()) > 1 else "daily"
+                            self.orchestrator.broadcast_saved_signals(pipeline)
+                        elif cmd == "/history":
+                            self.send_message(self.orchestrator.handle_history_command(text))
+                        elif cmd in ["/log_system", "/log-system"]:
+                            self.send_message(self.orchestrator.handle_log_system_command(text))
+                        elif cmd.startswith("/report"):
                             self.handle_report(text)
                 
             except KeyboardInterrupt:
