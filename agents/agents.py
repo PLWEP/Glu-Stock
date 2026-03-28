@@ -40,11 +40,32 @@ class StrategyAgent:
         self.backtester = VectorizedBacktester()
 
     def get_recommendations(self, df: pd.DataFrame, pipeline: str = "daily") -> pd.DataFrame:
+        """
+        Generates signals and enriches with Institutional TP/SL levels.
+        """
         strategy = self.pipelines[pipeline]
+        result_df = strategy.generate_signals(df)
         
-        # Daily signals usually need higher frequency (15m) processed in df
-        # Weekly/Monthly use Daily (1d) processed in df
-        return strategy.generate_signals(df)
+        if result_df.empty: return result_df
+
+        # Risk Parameter Mapping
+        risk_params = {
+            "daily": {"tp1": 0.01, "tp2": 0.02, "sl": 0.01, "duration": "1 Day"},
+            "weekly": {"tp1": 0.03, "tp2": 0.05, "sl": 0.03, "duration": "1 Week"},
+            "monthly": {"tp1": 0.10, "tp2": 0.20, "sl": 0.07, "duration": "1-3 Months"}
+        }
+        
+        params = risk_params.get(pipeline.lower(), risk_params["daily"])
+        
+        # Calculate levels for Active Signals (final_signal == 1)
+        last_close = result_df['close'].iloc[-1]
+        result_df['buy_price'] = last_close
+        result_df['tp1'] = last_close * (1 + params["tp1"])
+        result_df['tp2'] = last_close * (1 + params["tp2"])
+        result_df['sl_level'] = last_close * (1 - params["sl"])
+        result_df['signal_duration'] = params["duration"]
+        
+        return result_df
 
     def validate_strategy(self, df: pd.DataFrame) -> Dict[str, Any]:
         print("StrategyAgent: Validating strategy with backtest...")

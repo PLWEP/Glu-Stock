@@ -7,6 +7,7 @@ from reporting.report import ReportGenerator
 from utils.alerts import send_telegram_alert
 from utils.text_report import TextReportGenerator
 from utils.config import ConfigLoader
+from utils.logger import JsonLogger
 
 class PipelineOrchestrator:
     """
@@ -15,6 +16,7 @@ class PipelineOrchestrator:
     """
 
     def __init__(self, initial_cash: float = 100000.0, output_dir: str = "reporting/exports"):
+        self.logger = JsonLogger(log_file="logs/orchestrator.log")
         self.research_agent = ResearchAgent()
         self.strategy_agent = StrategyAgent()
         self.trading_agent = TradingAgent(initial_cash=initial_cash)
@@ -68,8 +70,10 @@ class PipelineOrchestrator:
         if interval == "15m":
             start_date = (datetime.now() - timedelta(days=59)).strftime("%Y-%m-%d")
 
-        # Collect candidates for reporting
-        self.results["candidates"] = [{"ticker": t, "score": 0.0} for t in selected_stocks] # Placeholder or map from Universe agent
+        # Prepare results for this clear run
+        self.results["candidates"] = []
+        self.results["success"] = []
+        self.results["failure"] = []
 
         # 2. Sequential Processing (Ensuring execution regardless of signal strength)
         for ticker in selected_stocks:
@@ -81,14 +85,27 @@ class PipelineOrchestrator:
                     continue
                 
                 # B. Strategy & Candidate Logic
-                df = self.strategy_agent.get_recommendations(df, pipeline=pipeline, paper_trading=paper_trading)
+                df = self.strategy_agent.get_recommendations(df, pipeline=pipeline)
+                if df.empty or df['final_signal'].iloc[-1] == 0:
+                    continue
                 
-                # C. Execution (Always attempt trade logic for selected stocks)
+                # C. Capture detailed signal for report
+                last_row = df.iloc[-1]
+                self.results["candidates"].append({
+                    "ticker": ticker,
+                    "buy": round(last_row['buy_price'], 2),
+                    "tp1": round(last_row['tp1'], 2),
+                    "tp2": round(last_row['tp2'], 2),
+                    "sl": round(last_row['sl_level'], 2),
+                    "duration": last_row['signal_duration']
+                })
+
+                # D. Execution
                 self.trading_agent.trade(df)
                 trade_count += 1
-                candidate_count += 1 # Every selected stock is a candidate in this mode
+                candidate_count += 1
                 
-                # D. Success Tracking
+                # E. Success Tracking
                 self.results["success"].append(ticker)
                 all_data.append(df)
                 
@@ -102,11 +119,46 @@ class PipelineOrchestrator:
         # 3. Forced Reporting (Always Runs)
         self.logger.info("Orchestrator: Finalizing session and forced reporting...")
         final_summary = self._consolidate_results(all_data)
+        
+        # Institutional Signal Report
+        signal_report = self.generate_signal_report(pipeline)
+        send_telegram_alert(signal_report)
+        
         self._generate_final_report(final_summary)
-        self._send_telegram_summary(final_summary, candidates=self.results["candidates"])
         
         self.logger.info(f"Orchestrator: Aggregation complete, tickers_processed={len(final_summary['tickers_processed'])}")
         return final_summary
+
+    def generate_signal_report(self, pipeline: str) -> str:
+        """ Formats the signal report for Telegram based on user request. """
+        p_name = pipeline.upper()
+        candidates = self.results["candidates"]
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+        
+        header = f"🚀 *GLU-STOCK PRE-MARKET ANALYSIS ({p_name})*\n"
+        header += f"📅 {now_str}\n\n"
+        header += f"Total saham yang lolos filter: {len(candidates)}\n"
+        header += "==============================\n\n"
+        
+        body = ""
+        for c in candidates:
+            # We check if it's the detailed Dict or the old List format
+            if isinstance(c, dict) and "buy" in c:
+                body += f"🔹 *{c['ticker']}*\n"
+                body += f"   - BUY: {c['buy']}\n"
+                body += f"   - TP1: {c['tp1']}\n"
+                body += f"   - TP2: {c['tp2']}\n"
+                body += f"   - SL: {c['sl']}\n"
+                body += f"   - Validity: {c['duration']}\n\n"
+            else:
+                ticker = c.get('ticker') if isinstance(c, dict) else c
+                body += f"🔹 *{ticker}* (No precise signal detail)\n\n"
+            
+        if not candidates:
+            body = "Tidak ada saham yang memenuhi kriteria hari ini.\n"
+            
+        footer = "⚠️ _Setiap keputusan trading berisiko. Gunakan MM yang ketat._"
+        return header + body + footer
 
     def _send_telegram_summary(self, summary: Dict[str, Any], candidates: List[Dict[str, Any]] = None):
         """ Sends high-impact session summary to Telegram with robust fallback. """

@@ -17,42 +17,52 @@ class TradingScheduler:
         self.config_loader = ConfigLoader()
         self.orchestrator = PipelineOrchestrator()
 
-    def run_pipeline(self):
-        """ Executes the full trading pipeline for configured tickers. """
-        self.logger.info("Scheduler: Initializing pipeline execution...")
+    def run_pipeline(self, pipeline: str = "daily"):
+        """ Executes the specific trading pipeline. """
+        self.logger.info(f"Scheduler: Initializing [{pipeline}] pipeline execution...")
         try:
-            # Reload config to ensure we have latest tickers/capital
+            # Reload config
             self.config_loader = ConfigLoader()
-            params = self.config_loader.get_trading_params()
             
-            # Run orchestrator with dynamic 1-year lookback
+            # Use appropriate history duration based on pipeline
+            days_map = {"daily": 60, "weekly": 180, "monthly": 730}
+            days = days_map.get(pipeline.lower(), 365)
+            
             end_date = datetime.now().strftime("%Y-%m-%d")
-            start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+            start_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
             
-            summary = self.orchestrator.run_full_pipeline(
-                tickers=params["tickers"],
+            self.orchestrator.run_full_pipeline(
+                tickers=None, # Use dynamic universe selection
                 start_date=start_date,
-                end_date=end_date
+                end_date=end_date,
+                pipeline=pipeline
             )
             
-            self.logger.info("Scheduler: Pipeline executed successfully", 
-                             tickers_processed=len(summary.get("tickers_processed", [])),
-                             failures=len(summary.get("failures", [])))
+            self.logger.info(f"Scheduler: [{pipeline}] pipeline executed successfully.")
             
         except Exception as e:
-            self.logger.error("Scheduler: Critical failure during pipeline execution", error=str(e))
+            self.logger.error(f"Scheduler: Critical failure during [{pipeline}] pipeline", error=str(e))
 
     def setup_schedule(self):
-        """ Registers 09:00 weekday tasks. """
-        self.logger.info("Scheduler: Setting up weekday 09:00 schedule...")
+        """ Registers 08:30 staggered tasks for each pipeline. """
+        self.logger.info("Scheduler: Setting up 08:30 multi-pipeline schedule...")
         
-        schedule.every().monday.at("09:00").do(self.run_pipeline)
-        schedule.every().tuesday.at("09:00").do(self.run_pipeline)
-        schedule.every().wednesday.at("09:00").do(self.run_pipeline)
-        schedule.every().thursday.at("09:00").do(self.run_pipeline)
-        schedule.every().friday.at("09:00").do(self.run_pipeline)
+        # 1. DAILY: Every Trading Day (Mon-Fri) at 08:30
+        for day in ["monday", "tuesday", "wednesday", "thursday", "friday"]:
+            getattr(schedule.every(), day).at("08:30").do(self.run_pipeline, pipeline="daily")
+        
+        # 2. WEEKLY: Every Monday at 08:30
+        schedule.every().monday.at("08:30").do(self.run_pipeline, pipeline="weekly")
+        
+        # 3. MONTHLY: Check on 08:30 daily if it's the 1st of the month
+        schedule.every().day.at("08:30").do(self._monthly_check)
         
         self.logger.info("Scheduler: Schedule registration complete.")
+
+    def _monthly_check(self):
+        """ Helper to run Monthly pipeline only on the 1st. """
+        if datetime.now().day == 1:
+            self.run_pipeline(pipeline="monthly")
 
     def start_loop(self):
         """ Enters the infinite scheduler loop. """
@@ -76,7 +86,9 @@ if __name__ == "__main__":
     ts = TradingScheduler()
     
     if args.now:
-        ts.run_pipeline()
+        # Allow specifying pipeline in CLI
+        pipeline = "daily"
+        ts.run_pipeline(pipeline=pipeline)
     elif args.loop:
         ts.start_loop()
     else:
