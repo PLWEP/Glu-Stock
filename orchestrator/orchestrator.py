@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional
 from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSelectionAgent
 from reporting.report import ReportGenerator
 from utils.alerts import send_telegram_alert
+from utils.history import StrategicHistoryManager
 from utils.text_report import TextReportGenerator
 from backtesting.backtest import VectorizedBacktester
 from portfolio.portfolio import Portfolio
@@ -21,13 +22,14 @@ class PipelineOrchestrator:
     def __init__(self, initial_cash: float = 100000.0, output_dir: str = "reporting/exports"):
         self.logger = JsonLogger(log_file="logs/orchestrator.log")
         self.persistence = SignalPersistence()
+        self.history_manager = StrategicHistoryManager()
+        self.results = {"candidates": [], "success": [], "errors": []}
         self.research_agent = ResearchAgent()
         self.strategy_agent = StrategyAgent()
         self.backtester = VectorizedBacktester(initial_capital=initial_cash)
         self.trading_agent = TradingAgent(initial_cash=initial_cash)
         self.universe_agent = UniverseSelectionAgent(research_agent=self.research_agent)
         self.report_generator = ReportGenerator(output_dir=output_dir)
-        self.results = {"success": [], "failure": [], "candidates": []}
 
     def run_full_pipeline(self, tickers: Optional[List[str]] = None, max_stocks: int = 5, start_date: Optional[str] = None, end_date: Optional[str] = None, pipeline: str = "daily", send_alert: bool = False) -> Dict[str, Any]:
         """
@@ -49,8 +51,7 @@ class PipelineOrchestrator:
         scanned_count = 0
         candidate_count = 0
         trade_count = 0
-        all_data = {}
-
+        
         if tickers is None:
             self.logger.info(f"Orchestrator: Selecting top {max_stocks} dynamically via [{pipeline}] pipeline...")
             tickers = self.universe_agent.select_universe(max_stocks, start_date, end_date, pipeline=pipeline)
@@ -82,6 +83,9 @@ class PipelineOrchestrator:
         self.results["failure"] = []
 
         # 2. Sequential Processing (Ensuring execution regardless of signal strength)
+        self.logger.info(f"Orchestrator: [STEP 1/3] Researching {len(tickers)} stocks...")
+        self.history_manager.log_event(pipeline, "SCAN_START", details=f"Tickers to research: {len(tickers)}")
+        all_data = {}
         for ticker in selected_stocks:
             self.logger.info(f"Orchestrator: Processing [{ticker}]...")
             try:
@@ -108,16 +112,28 @@ class PipelineOrchestrator:
                     self.results["candidates"].append(rec)
                     self.logger.info(f"Orchestrator: Signal for {ticker} PASSED audit (WR: {audit_result['win_rate']:.1f}%)")
                     
+                    self.history_manager.log_event(
+                        pipeline, "AUDIT", ticker, audit_result['win_rate'], "PASS", 
+                        f"PF: {audit_result['profit_factor']:.2f}"
+                    )
+                    
                     # D. Execution
                     self.trading_agent.trade(signals, pipeline=pipeline)
+                    self.history_manager.log_event(pipeline, "TRADE", ticker, status="SUCCESS")
+                    
                     trade_count += 1
                     candidate_count += 1
                     self.results["success"].append(ticker)
                 else:
                     self.logger.warning(f"Orchestrator: Signal for {ticker} FAILED audit (WR: {audit_result['win_rate']:.1f}%) - skipping.")
+                    self.history_manager.log_event(
+                        pipeline, "AUDIT", ticker, audit_result['win_rate'], "FAIL", 
+                        f"PF: {audit_result['profit_factor']:.2f}"
+                    )
 
         self.logger.info(f"Orchestrator: [STEP 2/3] Found {candidate_count} candidates for execution.")
         self.logger.info(f"Orchestrator: [STEP 3/3] Processed {trade_count} execution attempts.")
+        self.history_manager.log_event(pipeline, "SCAN_END", details=f"Candidates found: {candidate_count}")
 
         # 3. Forced Reporting (Always Runs)
         self.logger.info("Orchestrator: Finalizing session and forced reporting...")
@@ -190,7 +206,15 @@ class PipelineOrchestrator:
         # 2. Get Summary
         summary = self.trading_agent.get_detailed_status(current_prices, pipeline=pipeline)
         
-        # 3. Format & Send
+        # 3. Log Outcomes to History
+        for h in summary.get("holdings", []):
+            status = "PROFIT" if h["pnl"] >= 0 else "LOSS"
+            self.history_manager.log_event(
+                pipeline, "RECAP", h["ticker"], h["pnl_pct"], status, 
+                f"Lots: {h['lots']}, PnL: Rp{h['pnl']:,.0f}"
+            )
+
+        # 4. Format & Send
         report = self.generate_portfolio_report(summary, pipeline)
         send_telegram_alert(report)
         self.logger.info(f"Orchestrator: Portfolio report sent for [{pipeline}].")
@@ -291,30 +315,72 @@ class PipelineOrchestrator:
     def _generate_final_report(self, summary: Dict[str, Any]):
         """ Triggers the HTML report generation. """
         print("Orchestrator: Generating final HTML report...")
-        # Load trade log
-        log_file = summary["trade_log_path"]
+        log_file = summary.get("trade_log_path", "execution/trade_log.csv")
         trade_log = pd.DataFrame()
         if os.path.exists(log_file):
             trade_log = pd.read_csv(log_file)
             
-        # Simplified metrics for the report
         metrics = {
             "Total_Equity": f"${summary['final_portfolio']['equity']:.2f}",
             "Cash": f"${summary['final_portfolio']['cash']:.2f}",
             "Realized_PnL": f"${summary['final_portfolio']['realized_pnl']:.2f}",
-            "Assets": len(summary['tickers_processed']),
-            "Failures": len(summary['failures'])
+            "Assets": len(summary.get('tickers_processed', [])),
+            "Failures": len(summary.get('failures', []))
         }
-        
-        # We need an equity curve. Since we don't have a time-series equity curve 
-        # across all tickers combined here, we'll use a dummy placeholder or 
-        # assume StrategyAgent's backtester would provide it.
-        # For now, let's just pass a series of total equity if available.
-        # In a real scenario, the portfolio should track its history.
-        # For this version, let's use a flat curve representing final vs start.
         equity_series = pd.Series([100000, summary['final_portfolio']['equity']])
-        
         self.report_generator.generate_html_report(metrics, trade_log, equity_series, filename="orchestrator_report.html")
+
+    def handle_history_command(self, command_str: str) -> str:
+        """ 
+        Parses and handles /history [strategy/date/ticker] command.
+        Example: /history daily, /history 2024-03-28, /history BBCA.JK
+        """
+        parts = command_str.strip().split()
+        filter_val = parts[1] if len(parts) > 1 else None
+        
+        strategy = None
+        ticker = None
+        date_val = None
+        
+        if filter_val:
+            val = filter_val.lower()
+            if val in ["daily", "weekly", "monthly"]:
+                strategy = val
+            elif "-" in val and len(val) == 10:
+                date_val = val
+            else:
+                ticker = filter_val.upper()
+        
+        if date_val:
+            events = self.history_manager.get_daily_summary(date_val)
+            title = f"📅 History for {date_val}"
+        else:
+            events = self.history_manager.query_history(strategy=strategy, ticker=ticker, limit=15)
+            title = f"📜 History: {filter_val or 'Recent'}"
+            
+        return self._format_history_report(events, title)
+
+    def _format_history_report(self, events: List[Dict[str, Any]], title: str) -> str:
+        """ Formats history events into a Telegram-friendly Markdown table. """
+        if not events:
+            return f"❌ *{title}*\n_No logs found for this query._"
+            
+        report = f"📋 *{title.upper()}*\n"
+        report += "`TIME  | TYPE   | TICKER   | STATUS`\n"
+        report += "`----------------------------------`\n"
+        
+        for e in events:
+            # Shorten timestamp to HH:MM
+            t = e['timestamp'].split()[1][:5] if ' ' in e['timestamp'] else e['timestamp'][-5:]
+            phase = e['phase'][:6].ljust(6)
+            ticker = e['ticker'][:8].ljust(8)
+            status = e['status'][:6]
+            
+            report += f"`{t} | {phase} | {ticker} | {status}`\n"
+            if e['phase'] in ["TRADE", "RECAP", "AUDIT"]:
+                 report += f"   _{e['details']}_\n"
+                 
+        return report
 
 if __name__ == "__main__":
     import os
