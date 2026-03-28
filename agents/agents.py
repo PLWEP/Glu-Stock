@@ -169,6 +169,37 @@ class TradingAgent:
             "positions": self.portfolio.positions
         }
 
+    def get_detailed_status(self, current_prices: Dict[str, float]) -> Dict[str, Any]:
+        """ Generates a 'Security Firm' style portfolio summary. """
+        summary = {
+            "cash": self.portfolio.cash,
+            "equity": self.portfolio.get_equity(current_prices),
+            "realized_pnl": self.portfolio.realized_pnl,
+            "unrealized_pnl": self.portfolio.get_unrealized_pnl(current_prices),
+            "holdings": []
+        }
+        
+        for ticker, pos in self.portfolio.positions.items():
+            last_p = current_prices.get(ticker, pos["avg_cost"])
+            shares = pos["shares"]
+            avg_p = pos["avg_cost"]
+            
+            pnl = shares * (last_p - avg_p)
+            pnl_pct = (pnl / (shares * avg_p)) * 100 if avg_p > 0 else 0
+            
+            summary["holdings"].append({
+                "ticker": ticker,
+                "lots": shares / 100,
+                "shares": shares,
+                "avg_price": avg_p,
+                "last_price": last_p,
+                "value": shares * last_p,
+                "pnl": pnl,
+                "pnl_pct": pnl_pct
+            })
+            
+        return summary
+
 if __name__ == "__main__":
     # Mini integration test
     ra = ResearchAgent()

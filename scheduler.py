@@ -48,6 +48,15 @@ class TradingScheduler:
         except Exception as e:
             self.logger.error(f"Scheduler: Report failure for [{pipeline}]", error=str(e))
 
+    def broadcast_portfolio(self, pipeline: str = "daily"):
+        """ Sends the End-of-Day Portfolio Report. """
+        self.logger.info(f"Scheduler: Sending [{pipeline}] EOD Portfolio Report...")
+        try:
+            self.orchestrator.broadcast_portfolio_status(pipeline)
+            self.logger.info(f"Scheduler: [{pipeline}] portfolio report sent successfully.")
+        except Exception as e:
+            self.logger.error(f"Scheduler: Portfolio report failure for [{pipeline}]", error=str(e))
+
     def setup_schedule(self):
         """ Registers staggered scan (16:00) and alert (08:30) tasks. """
         self.logger.info("Scheduler: Setting up decoupled scan/alert schedule...")
@@ -56,17 +65,22 @@ class TradingScheduler:
         for day in ["monday", "tuesday", "wednesday", "thursday", "friday"]:
             # A. Morning Alerts (08:30)
             getattr(schedule.every(), day).at("08:30").do(self.broadcast_report, pipeline="daily")
-            # B. Session-Close Scans (16:00)
+            # B. EOD Portfolio (15:55)
+            getattr(schedule.every(), day).at("15:55").do(self.broadcast_portfolio, pipeline="daily")
+            # C. Session-Close Scans (16:00)
             getattr(schedule.every(), day).at("16:00").do(self.run_scan, pipeline="daily")
         
         # --- WEEKLY (Friday/Monday) ---
-        # A. Friday Close Scan
+        # A. Friday EOD Portfolio
+        schedule.every().friday.at("15:55").do(self.broadcast_portfolio, pipeline="weekly")
+        # B. Friday Close Scan
         schedule.every().friday.at("16:15").do(self.run_scan, pipeline="weekly")
-        # B. Monday Morning Alert
+        # C. Monday Morning Alert
         schedule.every().monday.at("08:30").do(self.broadcast_report, pipeline="weekly")
         
         # --- MONTHLY ---
-        # A. Last Day Check for Scan
+        # A. Last Day Check for Portfolio & Scan
+        schedule.every().day.at("15:55").do(self._monthly_portfolio_check)
         schedule.every().day.at("16:30").do(self._monthly_scan_check)
         # B. 1st Day Check for Alert
         schedule.every().day.at("08:30").do(self._monthly_alert_check)
@@ -86,6 +100,14 @@ class TradingScheduler:
         if datetime.now().day == 1:
             self.broadcast_report(pipeline="monthly")
 
+    def _monthly_portfolio_check(self):
+        """ Runs portfolio report on last day of month. """
+        from calendar import monthrange
+        now = datetime.now()
+        last_day = monthrange(now.year, now.month)[1]
+        if now.day == last_day:
+            self.broadcast_portfolio(pipeline="monthly")
+
     def start_loop(self):
         """ Enters the infinite scheduler loop. """
         self.setup_schedule()
@@ -101,7 +123,8 @@ class TradingScheduler:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Glu-Stock Trading Scheduler")
     parser.add_argument("--scan", type=str, help="Manually run scan for: daily, weekly, monthly")
-    parser.add_argument("--report", type=str, help="Manually send report for: daily, weekly, monthly")
+    parser.add_argument("--report", type=str, help="Manually send signal report for: daily, weekly, monthly")
+    parser.add_argument("--portfolio", type=str, help="Manually send portfolio report for: daily, weekly, monthly")
     parser.add_argument("--loop", action="store_true", help="Start the background scheduler loop")
     
     args = parser.parse_args()
@@ -112,6 +135,8 @@ if __name__ == "__main__":
         ts.run_scan(pipeline=args.scan)
     elif args.report:
         ts.broadcast_report(pipeline=args.report)
+    elif args.portfolio:
+        ts.broadcast_portfolio(pipeline=args.portfolio)
     elif args.loop:
         ts.start_loop()
     else:

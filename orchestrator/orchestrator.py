@@ -147,6 +147,56 @@ class PipelineOrchestrator:
         send_telegram_alert(report)
         self.logger.info(f"Orchestrator: Broadcast complete for [{pipeline}].")
 
+    def broadcast_portfolio_status(self, pipeline: str):
+        """ Fetches current prices and sends a detailed EOD Portfolio report. """
+        self.logger.info(f"Orchestrator: Generating EOD Portfolio Report for [{pipeline}]...")
+        
+        # 1. Get Tickers
+        tickers = list(self.trading_agent.portfolio.positions.keys())
+        current_prices = {}
+        
+        if tickers:
+            # Fetch latest prices
+            df = self.research_agent.research(tickers, 
+                                            start_date=(datetime.now() - timedelta(days=5)).strftime("%Y-%m-%d"),
+                                            end_date=datetime.now().strftime("%Y-%m-%d"),
+                                            interval="1h")
+            for ticker in tickers:
+                if ticker in df.index.get_level_values('ticker'):
+                    current_prices[ticker] = df.xs(ticker, level='ticker')['close'].iloc[-1]
+
+        # 2. Get Summary
+        summary = self.trading_agent.get_detailed_status(current_prices)
+        
+        # 3. Format & Send
+        report = self.generate_portfolio_report(summary, pipeline)
+        send_telegram_alert(report)
+        self.logger.info(f"Orchestrator: Portfolio report sent for [{pipeline}].")
+
+    def generate_portfolio_report(self, summary: Dict[str, Any], pipeline: str) -> str:
+        """ Formats the portfolio summary like a security firm report. """
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+        header = f"📊 *GLU-STOCK PORTFOLIO REKAP ({pipeline.upper()})*\n"
+        header += f"📅 {now_str}\n\n"
+        
+        body = ""
+        for h in summary["holdings"]:
+            emoji = "🟢" if h["pnl"] >= 0 else "🔴"
+            body += f"{emoji} *{h['ticker']}*\n"
+            body += f"   - Lot: {h['lots']:.2f} ({h['shares']} shrs)\n"
+            body += f"   - Avg: {h['avg_price']:.2f} | Last: {h['last_price']:.2f}\n"
+            body += f"   - PnL: {h['pnl']:+,.2f} ({h['pnl_pct']:+2.2f}%)\n\n"
+        
+        if not summary["holdings"]:
+            body = "_Tidak ada posisi aktif saat ini._\n\n"
+            
+        footer = "==============================\n"
+        footer += f"💰 *Cash:* {summary['cash']:,.2f}\n"
+        footer += f"📈 *Equity:* {summary['equity']:,.2f}\n"
+        footer += f"🏆 *Total PnL:* {summary['realized_pnl'] + summary['unrealized_pnl']:+,.2f}\n"
+        
+        return header + body + footer
+
     def generate_signal_report(self, pipeline: str) -> str:
         """ Formats the signal report for Telegram based on user request. """
         p_name = pipeline.upper()
