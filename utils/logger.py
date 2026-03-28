@@ -36,6 +36,10 @@ class JsonLogger:
         """ Log an informational message. """
         self._log("INFO", message, **kwargs)
 
+    def warning(self, message: str, **kwargs):
+        """ Log a warning message. """
+        self._log("WARNING", message, **kwargs)
+
     def error(self, message: str, **kwargs):
         """ Log an error message and send a Telegram alert. """
         self._log("ERROR", message, **kwargs)

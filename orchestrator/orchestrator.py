@@ -6,6 +6,8 @@ from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSe
 from reporting.report import ReportGenerator
 from utils.alerts import send_telegram_alert
 from utils.text_report import TextReportGenerator
+from backtesting.backtest import VectorizedBacktester
+from portfolio.portfolio import Portfolio
 from utils.config import ConfigLoader
 from utils.logger import JsonLogger
 from utils.persistence import SignalPersistence
@@ -21,6 +23,7 @@ class PipelineOrchestrator:
         self.persistence = SignalPersistence()
         self.research_agent = ResearchAgent()
         self.strategy_agent = StrategyAgent()
+        self.backtester = VectorizedBacktester(initial_capital=initial_cash)
         self.trading_agent = TradingAgent(initial_cash=initial_cash)
         self.universe_agent = UniverseSelectionAgent(research_agent=self.research_agent)
         self.report_generator = ReportGenerator(output_dir=output_dir)
@@ -46,7 +49,7 @@ class PipelineOrchestrator:
         scanned_count = 0
         candidate_count = 0
         trade_count = 0
-        all_data = []
+        all_data = {}
 
         if tickers is None:
             self.logger.info(f"Orchestrator: Selecting top {max_stocks} dynamically via [{pipeline}] pipeline...")
@@ -86,42 +89,39 @@ class PipelineOrchestrator:
                 df = self.research_agent.research([ticker], start_date, end_date, interval=interval)
                 if df.empty:
                     continue
-                
-                # B. Strategy & Candidate Logic
-                df = self.strategy_agent.get_recommendations(df, pipeline=pipeline)
-                if df.empty or df['final_signal'].iloc[-1] == 0:
-                    continue
-                
-                # C. Capture detailed signal for report
-                last_row = df.iloc[-1]
-                self.results["candidates"].append({
-                    "ticker": ticker,
-                    "buy": round(last_row['buy_price'], 2),
-                    "tp1": round(last_row['tp1'], 2),
-                    "tp2": round(last_row['tp2'], 2),
-                    "sl": round(last_row['sl_level'], 2),
-                    "duration": last_row['signal_duration']
-                })
-
-                # D. Execution
-                self.trading_agent.trade(df)
-                trade_count += 1
-                candidate_count += 1
-                
-                # E. Success Tracking
-                self.results["success"].append(ticker)
-                all_data.append(df)
-                
+                all_data[ticker] = df
             except Exception as e:
                 self.logger.error(f"Orchestrator: Error processing [{ticker}]: {str(e)}")
                 self.results["failure"].append({"ticker": ticker, "error": str(e)})
+
+        # 3. Strategy Analysis
+        self.logger.info(f"Orchestrator: Generating signals for {len(all_data)} tickers...")
+        for ticker, df in all_data.items():
+            signals = self.strategy_agent.get_recommendations(df, pipeline=pipeline)
+            if not signals.empty and signals['final_signal'].iloc[-1] != 0:
+                # Mandatory Backtest Audit
+                audit_result = self._audit_with_backtest(ticker, df, pipeline)
+                if audit_result["pass"]:
+                    rec = signals.iloc[-1].to_dict()
+                    rec['ticker'] = ticker
+                    rec['audit'] = audit_result
+                    self.results["candidates"].append(rec)
+                    self.logger.info(f"Orchestrator: Signal for {ticker} PASSED audit (WR: {audit_result['win_rate']:.1f}%)")
+                    
+                    # D. Execution
+                    self.trading_agent.trade(signals)
+                    trade_count += 1
+                    candidate_count += 1
+                    self.results["success"].append(ticker)
+                else:
+                    self.logger.warning(f"Orchestrator: Signal for {ticker} FAILED audit (WR: {audit_result['win_rate']:.1f}%) - skipping.")
 
         self.logger.info(f"Orchestrator: [STEP 2/3] Found {candidate_count} candidates for execution.")
         self.logger.info(f"Orchestrator: [STEP 3/3] Processed {trade_count} execution attempts.")
 
         # 3. Forced Reporting (Always Runs)
         self.logger.info("Orchestrator: Finalizing session and forced reporting...")
-        final_summary = self._consolidate_results(all_data)
+        final_summary = self._consolidate_results(list(all_data.values()))
         
         # Institutional Signal Report
         self.persistence.save_signals(pipeline, self.results["candidates"])
@@ -146,6 +146,28 @@ class PipelineOrchestrator:
         report = self.generate_signal_report(pipeline)
         send_telegram_alert(report)
         self.logger.info(f"Orchestrator: Broadcast complete for [{pipeline}].")
+
+    def _audit_with_backtest(self, ticker: str, df: pd.DataFrame, pipeline: str) -> Dict[str, Any]:
+        """ Performs a vectorized backtest on the ticker to validate indicator edge. """
+        # Ensure signals are generated for the entire history
+        full_signals = self.strategy_agent.get_recommendations(df, pipeline=pipeline, return_full=True)
+        
+        # Run Backtest
+        bt_df = self.backtester.run_backtest(full_signals)
+        metrics = self.backtester.get_ticker_metrics(bt_df, ticker)
+        
+        # Define Thresholds
+        thresholds = {
+            "daily": {"win_rate": 50.0, "profit_factor": 1.2},
+            "weekly": {"win_rate": 45.0, "profit_factor": 1.5},
+            "monthly": {"win_rate": 40.0, "profit_factor": 2.0}
+        }
+        
+        t = thresholds.get(pipeline.lower(), thresholds["daily"])
+        passed = (metrics["win_rate"] >= t["win_rate"]) and (metrics["profit_factor"] >= t["profit_factor"])
+        
+        metrics["pass"] = passed
+        return metrics
 
     def broadcast_portfolio_status(self, pipeline: str):
         """ Fetches current prices and sends a detailed EOD Portfolio report. """
@@ -211,13 +233,15 @@ class PipelineOrchestrator:
         body = ""
         for c in candidates:
             # We check if it's the detailed Dict or the old List format
-            if isinstance(c, dict) and "buy" in c:
+            if isinstance(c, dict) and "buy_level" in c:
                 body += f"🔹 *{c['ticker']}*\n"
-                body += f"   - BUY: {c['buy']}\n"
-                body += f"   - TP1: {c['tp1']}\n"
-                body += f"   - TP2: {c['tp2']}\n"
-                body += f"   - SL: {c['sl']}\n"
-                body += f"   - Validity: {c['duration']}\n\n"
+                if "audit" in c:
+                    a = c["audit"]
+                    body += f"🛡️ *Audit:* PASS (WR: {a['win_rate']:.1f}% | PF: {a['profit_factor']:.2f})\n"
+                body += f"   - BUY: {c['buy_level']:,.2f}\n"
+                body += f"   - TP1: {c['tp1']:,.2f} | TP2: {c['tp2']:,.2f}\n"
+                body += f"   - SL: {c['sl_level']:,.2f}\n"
+                body += f"   - Validity: {c['signal_duration']}\n\n"
             else:
                 ticker = c.get('ticker') if isinstance(c, dict) else c
                 body += f"🔹 *{ticker}* (No precise signal detail)\n\n"

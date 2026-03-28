@@ -82,6 +82,36 @@ class VectorizedBacktester:
             "final_value": equity.iloc[-1]
         }
 
+    def get_ticker_metrics(self, df: pd.DataFrame, ticker: str) -> dict:
+        """ Calculates metrics for a specific ticker from the backtest result. """
+        if df.empty or ticker not in df.index.get_level_values('ticker'):
+            return {"win_rate": 0, "profit_factor": 0, "trades": 0}
+            
+        ticker_df = df.xs(ticker, level='ticker')
+        # We audit based on all bars where we have an active signal
+        active_df = ticker_df[ticker_df['strategy_signal'] != 0].copy()
+        
+        # We still count trades to ensure some activity happened
+        num_trades = ticker_df[ticker_df['trades'] != 0]['trades'].sum() / 2  # Approx total trades (entry+exit)
+        
+        if active_df.empty:
+            return {"win_rate": 0, "profit_factor": 0, "trades": 0}
+            
+        # 1. Win Rate: Percentage of positive return bars while signal is active
+        wins = active_df[active_df['strategy_returns'] > 0]
+        win_rate = len(wins) / len(active_df)
+        
+        # 2. Profit Factor: Gross Profit / Gross Loss across active bars
+        gross_profit = active_df[active_df['strategy_returns'] > 0]['strategy_returns'].sum()
+        gross_loss = abs(active_df[active_df['strategy_returns'] < 0]['strategy_returns'].sum())
+        profit_factor = gross_profit / gross_loss if gross_loss > 0 else (100.0 if gross_profit > 0 else 0)
+        
+        return {
+            "win_rate": win_rate * 100,
+            "profit_factor": profit_factor,
+            "trades": int(num_trades)
+        }
+
 if __name__ == "__main__":
     # Sanity check with dummy data
     dates = pd.date_range("2024-01-01", periods=10)

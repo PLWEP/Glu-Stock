@@ -1,1 +1,28 @@
-{}
+{
+    "daily": {
+        "timestamp": "2026-03-28T17:10:52.569788",
+        "candidates": [
+            {
+                "open": 100.0,
+                "high": 110.0,
+                "low": 90.0,
+                "close": 200.0,
+                "volume": 1000,
+                "final_signal": 1,
+                "buy_level": 200.0,
+                "tp1": 202.0,
+                "tp2": 204.0,
+                "sl_level": 198.0,
+                "signal_duration": "1 Day",
+                "recommendation": "BUY",
+                "ticker": "GOOD.JK",
+                "audit": {
+                    "win_rate": 98.0392156862745,
+                    "profit_factor": 100.0,
+                    "trades": 50,
+                    "pass": true
+                }
+            }
+        ]
+    }
+}

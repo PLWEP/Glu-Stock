@@ -39,9 +39,9 @@ class StrategyAgent:
         }
         self.backtester = VectorizedBacktester()
 
-    def get_recommendations(self, df: pd.DataFrame, pipeline: str = "daily") -> pd.DataFrame:
+    def get_recommendations(self, df: pd.DataFrame, pipeline: str = "daily", return_full: bool = True) -> pd.DataFrame:
         """
-        Generates signals and enriches with Institutional TP/SL levels.
+        Generates signals and enriches with Institutional TP/SL levels (Vectorized).
         """
         strategy = self.pipelines[pipeline]
         result_df = strategy.generate_signals(df)
@@ -57,14 +57,16 @@ class StrategyAgent:
         
         params = risk_params.get(pipeline.lower(), risk_params["daily"])
         
-        # Calculate levels for Active Signals (final_signal == 1)
-        last_close = result_df['close'].iloc[-1]
-        result_df['buy_price'] = last_close
-        result_df['tp1'] = last_close * (1 + params["tp1"])
-        result_df['tp2'] = last_close * (1 + params["tp2"])
-        result_df['sl_level'] = last_close * (1 - params["sl"])
+        # Vectorized Level Calculation
+        result_df['buy_level'] = result_df['close']
+        result_df['tp1'] = result_df['close'] * (1 + params["tp1"])
+        result_df['tp2'] = result_df['close'] * (1 + params["tp2"])
+        result_df['sl_level'] = result_df['close'] * (1 - params["sl"])
         result_df['signal_duration'] = params["duration"]
         
+        # Standardize for Orchestrator report naming
+        result_df['recommendation'] = result_df['final_signal'].map({1: "BUY", -1: "SELL", 0: "HOLD"})
+
         return result_df
 
     def validate_strategy(self, df: pd.DataFrame) -> Dict[str, Any]:
