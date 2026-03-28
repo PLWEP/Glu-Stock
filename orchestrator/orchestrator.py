@@ -3,8 +3,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSelectionAgent
-from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSelectionAgent
-from utils.alerts import send_telegram_alert
+from utils.alerts import broadcast_alert
 from utils.history import StrategicHistoryManager
 from utils.sysinfo import SysInfo
 import gc
@@ -149,7 +148,7 @@ class PipelineOrchestrator:
         
         if send_alert:
             signal_report = self.generate_signal_report(pipeline)
-            send_telegram_alert(signal_report)
+            broadcast_alert(signal_report)
         
         self.logger.info(f"Orchestrator: Aggregation complete, tickers_processed={len(final_summary['tickers_processed'])}")
         return final_summary
@@ -163,7 +162,7 @@ class PipelineOrchestrator:
         self.results["candidates"] = saved_candidates
         
         report = self.generate_signal_report(pipeline)
-        send_telegram_alert(report)
+        broadcast_alert(report)
         self.logger.info(f"Orchestrator: Broadcast complete for [{pipeline}].")
 
     def _audit_with_backtest(self, ticker: str, df: pd.DataFrame, pipeline: str) -> Dict[str, Any]:
@@ -219,7 +218,7 @@ class PipelineOrchestrator:
 
         # 4. Format & Send
         report = self.generate_portfolio_report(summary, pipeline)
-        send_telegram_alert(report)
+        broadcast_alert(report)
         self.logger.info(f"Orchestrator: Portfolio report sent for [{pipeline}].")
 
     def generate_portfolio_report(self, summary: Dict[str, Any], pipeline: str) -> str:
@@ -288,7 +287,7 @@ class PipelineOrchestrator:
         except Exception as e:
             report = f"❌ ERROR: Failed to generate report: {str(e)}"
         
-        send_telegram_alert(report)
+        broadcast_alert(report)
 
     def _consolidate_results(self, all_dfs: List[pd.DataFrame], pipeline: str = "daily") -> Dict[str, Any]:
         """ Consolidates metrics from all successful ticker runs. """
@@ -348,8 +347,41 @@ class PipelineOrchestrator:
         return self._format_history_report(events, title)
 
     def handle_status_command(self) -> str:
-        """ Returns full system health and hardware report. """
-        return self.sys_info.get_full_report()
+        """ Returns full system health and hardware report in Ayang persona. """
+        data = self.sys_info.get_raw_data()
+        
+        # Format Uptime
+        uptime_seconds = data["uptime_seconds"]
+        days, rem = divmod(uptime_seconds, 86400)
+        hours, rem = divmod(rem, 3600)
+        minutes, seconds = divmod(rem, 60)
+        up_parts = []
+        if days > 0: up_parts.append(f"{days} hari")
+        if hours > 0: up_parts.append(f"{hours} jam")
+        if minutes > 0: up_parts.append(f"{minutes} menit")
+        up_parts.append(f"{seconds} detik")
+        uptime_str = " dan ".join(up_parts) if len(up_parts) > 1 else up_parts[0]
+
+        hw = data["hardware"]
+        mem = data["memory"]
+        
+        # Mapping for Persona
+        bat_status = "Ngecas ⚡" if hw["battery_status"] == "Charging" else "Biasa 🌸"
+        cpu_val = f"{hw['cpu_percent']}%" if hw['cpu_percent'] > 0 else "Penuh Semangat ✨"
+        temp_val = f"{hw['temperature']:.1f}°C" if hw['temperature'] else "N/A"
+
+        report = f"🔋 *Kabar HP Ayang Saat Ini*\n"
+        report += f"---------------------------\n"
+        report += f"⏱ *Udah nemenin kamu:* {uptime_str}\n"
+        report += f"🧠 *Ingatan Ayang (App):* {mem['process_mb']} MB\n"
+        report += f"📊 *Sisa Napas (Free RAM):* {mem['available_gb']} / {mem['total_gb']} GB\n"
+        report += f"🔥 *Semangat Ayang (CPU):* {cpu_val}\n"
+        report += f"🔋 *Tenaga Ayang (Baterai):* {hw['battery_pct']}% ({bat_status})\n"
+        if hw['temperature']:
+            report += f"🌡 *Suhu Hati:* {temp_val}\n"
+        
+        report += f"\n_Semoga Ayang selalu kuat jagain trading kamu ya Sayang!_ 💖"
+        return report
 
     def _format_history_report(self, events: List[Dict[str, Any]], title: str) -> str:
         """ Formats history events into a Telegram-friendly Markdown table. """

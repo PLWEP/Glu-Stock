@@ -1,6 +1,6 @@
-# Glu-Stock 💖 (Ayang Edition)
+# Glu-Stock 💹
 
-Quantitative Finance Framework for Stock Analysis, optimized for IDX (Indonesia Stock Exchange). Now with full **"Ayang" Persona** integration and multi-bot support (Telegram & WhatsApp).
+Quantitative Finance Framework for Stock Analysis, optimized for IDX (Indonesia Stock Exchange). Features a multi-agent engine with Telegram and WhatsApp bot integration.
 
 ## 📱 Termux Quick Start (Recommended)
 
@@ -40,28 +40,28 @@ Update your `.env` file with the following:
 - `WHATSAPP_AUTHORIZED_NUMBERS`: Your WA number (comma separated, e.g., `628123456789`).
 - `PYTHON_PATH`: `./glustock_venv/bin/python` (Default for Termux).
 
-## 💖 Ayang Persona Commands
+## 🤖 Bot Commands
 
-Ayang is now available on both Telegram and WhatsApp!
-- `/start`: Sapa Ayang & Buka Menu Utama.
-- `/status`: Cek Kondisi HP Ayang (RAM/Bat/Temp).
-- `/portfolio`: Cek Tabungan Kita (Daily/Weekly/Monthly).
-- `/signals`: Intip Sinyal Trading terbaru.
-- `/logs`: Cek kejadian-kejadian daleman Ayang.
-- `/history`: Liat catatan histori trading kemarin.
+The system features an interactive "Ayang" persona for the chatbot interface:
+- `/start`: Open Main Menu.
+- `/status`: System health report (RAM/Battery/Temp).
+- `/portfolio`: Performance summary (Daily/Weekly/Monthly).
+- `/signals`: Latest trading recommendations.
+- `/logs`: View system internal logs.
+- `/history`: Audit trail of strategy executions.
 
 ## 🛠️ Tech Stack
 - **Python 3.13**: Multi-agent trading engine.
 - **Node.js 22+**: Baileys (WhatsApp) bridge.
 - **SQLite**: Local state and log management.
-- **PM2**: 24/7 Autonomous execution manager.
+- **PM2**: Process manager for 24/7 autonomous execution.
 
 ## 📂 Project Structure
-- `agents/`: Multi-agent orchestration.
-- `data/`: High-performance caching and database.
-- `orchestrator/`: "Ayang" persona and command handling.
-- `utils/`: System info, logging, and personalized reports.
-- `wa_bot.js`: Node.js WhatsApp bridge via Baileys.
+- `agents/`: Multi-agent orchestration logic.
+- `data/`: Database and caching layer.
+- `orchestrator/`: Command processing and persona management.
+- `utils/`: Telemetry, reporting, and alert utilities.
+- `wa_bot.js`: WhatsApp bridge implementation.
 
 ---
-*Institutional Grade | Mobile First | Ayang & Personal* 💖
+*Institutional Grade | Mobile First | Robust Architecture*
