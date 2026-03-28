@@ -392,6 +392,48 @@ class PipelineOrchestrator:
                  
         return report
 
+    def handle_log_system_command(self, command_str: str) -> str:
+        """
+        Parses and handles /log-system [level] [limit] command.
+        Example: /log-system error, /log-system info 5
+        """
+        parts = command_str.strip().split()
+        level = parts[1] if len(parts) > 1 else None
+        limit = 10
+        
+        # Check if last part is a limit number
+        if len(parts) > 2 and parts[-1].isdigit():
+            limit = int(parts[-1])
+            if not level.isdigit(): # If second part was level
+                pass 
+            else: # If second part was limit
+                level = None
+        elif level and level.isdigit():
+            limit = int(level)
+            level = None
+
+        logs = self.logger.query_logs(level=level, limit=limit)
+        return self._format_system_logs(logs, level)
+
+    def _format_system_logs(self, logs: List[Dict[str, Any]], level: Optional[str]) -> str:
+        """ Formats system logs for Telegram. """
+        if not logs:
+            return f"❌ *SYSTEM LOGS*\n_No logs found for level: {level or 'ALL'}_"
+            
+        report = f"📂 *SYSTEM LOGS ({level or 'ALL'})*\n"
+        report += "`TIME     | LVL | MESSAGE`\n"
+        report += "`-----------------------`\n"
+        
+        for l in logs:
+            # Shorten timestamp
+            t = l['timestamp'].split('T')[1][:8] if 'T' in l['timestamp'] else l['timestamp'][-8:]
+            lvl = l['level'][:3].upper()
+            msg = l['message'][:40] # Truncate long messages
+            
+            report += f"`{t} | {lvl} | {msg}`\n"
+            
+        return report
+
 if __name__ == "__main__":
     import os
     # Integration test
