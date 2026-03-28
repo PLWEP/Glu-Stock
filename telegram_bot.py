@@ -167,7 +167,7 @@ class TelegramBot:
         """ Handles /report [daily|weekly] commands. """
         parts = command_text.split()
         if len(parts) < 2:
-            self.send_message("❌ Usage: `/report [daily|weekly|monthly]`")
+            self.send_message("❌ Sayang, gunanya gini ya: `/report [daily|weekly|monthly]`")
             return
         
         subcommand = parts[1].lower()
@@ -178,7 +178,7 @@ class TelegramBot:
         elif subcommand == "monthly":
             self.send_message(self.reporter.generate_monthly_report())
         else:
-            self.send_message(f"❌ Unknown report type: `{subcommand}`")
+            self.send_message(f"❌ Ayang bingung, `{subcommand}` itu laporan apa ya sayang?")
 
     def poll(self):
         """ Polling loop for Telegram updates. """

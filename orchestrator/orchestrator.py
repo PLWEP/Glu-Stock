@@ -223,38 +223,38 @@ class PipelineOrchestrator:
         self.logger.info(f"Orchestrator: Portfolio report sent for [{pipeline}].")
 
     def generate_portfolio_report(self, summary: Dict[str, Any], pipeline: str) -> str:
-        """ Formats the portfolio summary like a security firm report. """
+        """ Formats the portfolio summary for "Ayang" persona. """
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
-        header = f"📊 *GLU-STOCK PORTFOLIO REKAP ({pipeline.upper()})*\n"
-        header += f"📅 {now_str}\n\n"
+        header = f"📊 *REKAP TABUNGAN KITA ({pipeline.upper()})*\n"
+        header += f"📅 Dicatat pada: {now_str}\n\n"
         
         body = ""
         for h in summary["holdings"]:
             emoji = "🟢" if h["pnl"] >= 0 else "🔴"
             body += f"{emoji} *{h['ticker']}*\n"
-            body += f"   - Lot: {h['lots']:.2f} ({h['shares']} shrs)\n"
-            body += f"   - Avg: {h['avg_price']:.2f} | Last: {h['last_price']:.2f}\n"
-            body += f"   - PnL: {h['pnl']:+,.2f} ({h['pnl_pct']:+2.2f}%)\n\n"
+            body += f"   - Jumlah: {h['lots']:.2f} Lot ({h['shares']} lembar)\n"
+            body += f"   - Beli: {h['avg_price']:,.0f} | Sekarang: {h['last_price']:,.0f}\n"
+            body += f"   - Hasil: {h['pnl']:+,.0f} ({h['pnl_pct']:+2.2f}%)\n\n"
         
         if not summary["holdings"]:
-            body = "_Tidak ada posisi aktif saat ini._\n\n"
+            body = "Ayang belum lihat kita punya posisi aktif nih sayang... 🌸\n\n"
             
         footer = "==============================\n"
-        footer += f"💰 *Cash:* {summary['cash']:,.2f}\n"
-        footer += f"📈 *Equity:* {summary['equity']:,.2f}\n"
-        footer += f"🏆 *Total PnL:* {summary['realized_pnl'] + summary['unrealized_pnl']:+,.2f}\n"
+        footer += f"💰 *Sisa Uang:* {summary['cash']:,.2f}\n"
+        footer += f"📈 *Total Aset:* {summary['equity']:,.2f}\n"
+        footer += f"🏆 *Hasil Berjuang Kita:* {summary['realized_pnl'] + summary['unrealized_pnl']:+,.2f}\n"
         
         return header + body + footer
 
     def generate_signal_report(self, pipeline: str) -> str:
-        """ Formats the signal report for Telegram based on user request. """
+        """ Formats the signal report for "Ayang" persona. """
         p_name = pipeline.upper()
         candidates = self.results["candidates"]
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         
-        header = f"🚀 *GLU-STOCK PRE-MARKET ANALYSIS ({p_name})*\n"
+        header = f"🎯 *SINYAL SAYANG BUAT BESOK ({p_name})*\n"
         header += f"📅 {now_str}\n\n"
-        header += f"Total saham yang lolos filter: {len(candidates)}\n"
+        header += f"Ayang nemu {len(candidates)} saham bagus buat kamu:\n"
         header += "==============================\n\n"
         
         body = ""
@@ -264,19 +264,19 @@ class PipelineOrchestrator:
                 body += f"🔹 *{c['ticker']}*\n"
                 if "audit" in c:
                     a = c["audit"]
-                    body += f"🛡️ *Audit:* PASS (WR: {a['win_rate']:.1f}% | PF: {a['profit_factor']:.2f})\n"
-                body += f"   - BUY: {c['buy_level']:,.2f}\n"
-                body += f"   - TP1: {c['tp1']:,.2f} | TP2: {c['tp2']:,.2f}\n"
-                body += f"   - SL: {c['sl_level']:,.2f}\n"
-                body += f"   - Validity: {c['signal_duration']}\n\n"
+                    body += f"🛡️ *Hasil Cek Ayang:* OK ✨ (WR: {a['win_rate']:.1f}% | PF: {a['profit_factor']:.2f})\n"
+                body += f"   - TITIK BELI: {c['buy_level']:,.2f}\n"
+                body += f"   - TARGET UNTUNG: {c['tp1']:,.2f} | {c['tp2']:,.2f}\n"
+                body += f"   - BATAS RUGI: {c['sl_level']:,.2f}\n"
+                body += f"   - Ketahanan: {c['signal_duration']}\n\n"
             else:
                 ticker = c.get('ticker') if isinstance(c, dict) else c
-                body += f"🔹 *{ticker}* (No precise signal detail)\n\n"
+                body += f"🔹 *{ticker}* (Maaf sayang, detailnya belum lengkap)\n\n"
             
         if not candidates:
-            body = "Tidak ada saham yang memenuhi kriteria hari ini.\n"
+            body = "Hari ini belum ada saham yang cocok buat kita sayang... 🌸\n"
             
-        footer = "⚠️ _Setiap keputusan trading berisiko. Gunakan MM yang ketat._"
+        footer = "⚠️ _Ingat ya sayang, tetap hati-hati dalam trading. Ayang selalu dukung MM kamu!_ 💖"
         return header + body + footer
 
     def _send_telegram_summary(self, summary: Dict[str, Any], candidates: List[Dict[str, Any]] = None):
@@ -354,10 +354,10 @@ class PipelineOrchestrator:
     def _format_history_report(self, events: List[Dict[str, Any]], title: str) -> str:
         """ Formats history events into a Telegram-friendly Markdown table. """
         if not events:
-            return f"❌ *{title}*\n_No logs found for this query._"
+            return f"❌ *{title}*\n_Ayang belum nemu catatan apa-apa nih sayang..._"
             
-        report = f"📋 *{title.upper()}*\n"
-        report += "`TIME  | TYPE   | TICKER   | STATUS`\n"
+        report = f"📜 *CATATAN SAYANG ({title.upper()})*\n"
+        report += "`JAM   | AKSI   | SAHAM    | KONDISI`\n"
         report += "`----------------------------------`\n"
         
         for e in events:
@@ -399,11 +399,11 @@ class PipelineOrchestrator:
     def _format_system_logs(self, logs: List[Dict[str, Any]], level: Optional[str]) -> str:
         """ Formats system logs for Telegram. """
         if not logs:
-            return f"❌ *SYSTEM LOGS*\n_No logs found for level: {level or 'ALL'}_"
+            return f"❌ *DALEMAN AYANG*\n_Ayang belum ada catatan buat level: {level or 'SEMUA'}_"
             
-        report = f"📂 *SYSTEM LOGS ({level or 'ALL'})*\n"
-        report += "`TIME     | LVL | MESSAGE`\n"
-        report += "`-----------------------`\n"
+        report = f"📂 *DALEMAN AYANG ({level or 'SEMUA'})*\n"
+        report += "`JAM      | LVL | PESAN`\n"
+        report += "`-------------------------`\n"
         
         for l in logs:
             # Shorten timestamp
