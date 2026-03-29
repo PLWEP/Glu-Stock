@@ -41,6 +41,7 @@ class TelegramBot:
             "/logs": lambda: self.orchestrator.handle_log_system_command("/log_system info 10"),
             "/log_system": lambda cmd: self.orchestrator.handle_log_system_command(cmd),
             "/report": self.handle_report,
+            "/registry": lambda: self.orchestrator.handle_registry_command(),
             "/panic": self.handle_panic,
             "/panic_confirm": self.handle_panic_confirm
         }

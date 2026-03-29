@@ -150,3 +150,19 @@ class PipelineOrchestrator:
         for log in logs:
             msg += f"🕒 `{log['timestamp'][:19]}`: `{log['message']}`\n"
         return msg
+
+    def handle_registry_command(self) -> str:
+        """ Shows top experiments from the Backtest Registry. """
+        from data.backtest_db import BacktestRegistry
+        registry = BacktestRegistry()
+        experiments = registry.get_top_experiments(limit=5)
+        
+        if not experiments:
+            return "🌸 *Info Lab Ayang*\nBelum ada catatan simulasi nih sayang. Coba jalankan backtest dulu ya! 🧪"
+            
+        msg = "🧪 *REGISTRY EKSPERIMEN (Top 5)*\n\n"
+        for i, exp in enumerate(experiments, 1):
+            msg += f"{i}. *{exp['pipeline'].upper()}* ({exp['ticker']})\n"
+            msg += f"   📊 Sharpe: `{exp['sharpe']:.2f}` | OOS: `{exp['oos_sharpe']:.2f}`\n"
+            msg += f"   📅 `{exp['date'][:10]}`\n\n"
+        return msg
