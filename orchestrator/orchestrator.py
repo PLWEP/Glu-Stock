@@ -10,18 +10,20 @@ from utils.sysinfo import SystemMonitor
 from utils.alerts import broadcast_alert
 from utils.config import ConfigLoader
 from utils.performance import calculate_performance_metrics
+from utils.regime import RegimeDetector
 from risk.allocator import StrategyAllocator
 
 class PipelineOrchestrator:
     """
     Orchestrates the multi-agent trading lifecycle.
-    Includes Hardware Throttling, Panic Exit, and Dynamic Strategy Rebalancing.
+    Includes Hardware Throttling, Panic Exit, and Market Regime Guards.
     """
 
     def __init__(self, initial_cash: float = None):
         self.config = ConfigLoader().get_config()
         self.logger = JsonLogger(log_file="logs/orchestrator.log")
         self.sys_monitor = SystemMonitor()
+        self.regime_detector = RegimeDetector()
         
         # Agents & Tools
         self.research_agent = ResearchAgent()
@@ -30,40 +32,42 @@ class PipelineOrchestrator:
         self.universe_agent = UniverseSelectionAgent(research_agent=self.research_agent)
         self.allocator = StrategyAllocator(total_capital=self.config.get('initial_cash', 100000000.0))
         
-        # Utils
         self.persistence = SignalPersistence()
         self.history = HistoryManager()
 
     def run_full_pipeline(self, pipeline: str = "daily"):
-        """ Runs the full scan and trade loop with advanced guards. """
-        
         # 1. Hardware Safety Check
         is_safe, reason = self.sys_monitor.is_safe_to_run()
         if not is_safe:
             broadcast_alert(f"⚠️ *OTOT BOT AYANG LAGI LEMAS*\nScan ditunda... {reason}. Biarin bot istirahat ya! 🍵")
             return
 
-        # 2. Dynamic Capital Rebalancing (Inter-Strategy)
+        # 2. Market Regime Check (Global Risk Throttling)
+        regime_res = self.regime_detector.get_market_regime()
+        regime_label = f"📈 Market: {regime_res['regime']}"
+        risk_multiplier = regime_res.get('multiplier', 1.0)
+        
+        # 3. Dynamic Strategy Rebalancing 
         if self.config.get("risk", {}).get("dynamic_strategy_allocation"):
-            self.logger.info("Orchestrator: Recalculating strategy weights...")
             allocations = self.allocator.get_allocation_map()
             for p_name, cap in allocations.items():
                 if p_name in self.trading_agent.portfolios:
-                    self.trading_agent.portfolios[p_name].initial_capital = cap
+                    # Apply Regime Multiplier to the allocated capital
+                    final_cap = cap * risk_multiplier
+                    self.trading_agent.portfolios[p_name].initial_capital = final_cap
                     self.trading_agent.portfolios[p_name].save_state()
 
-        # 3. Expectancy Safeguard
+        # 4. Expectancy Safeguard
         all_trades = self.history.db.get_all_trades()
         p_trades = [t for t in all_trades if t.get('strategy', '').lower() == pipeline]
         if len(p_trades) >= 10:
             metrics = calculate_performance_metrics(p_trades, [])
             if metrics.get('expectancy', 0) < 0:
-                self.logger.warning(f"Orchestrator: Expectancy gate engaged for {pipeline}. Ex: {metrics['expectancy']}")
-                broadcast_alert(f"🌸 *INFO AYANG*\nSayang, strategi `{pipeline.upper()}` lagi gak punya hoki (Expectancy < 0). Ayang istirahatin dulu ya buat jaga tabungan kita! 🍵")
+                msg = f"🌸 *INFO AYANG*\nSayang, strategi `{pipeline.upper()}` lagi gak punya hoki (Ex < 0). Ayang istirahatin dulu ya! 🍵"
+                broadcast_alert(msg)
                 return
 
-        self.logger.info(f"Orchestrator: Starting {pipeline.upper()} pipeline...")
-        # ... rest of the pipeline remains the same ...
+        self.logger.info(f"Orchestrator: Starting {pipeline.upper()} pipeline ({regime_label})...")
         start_time = time.time()
         end_date = datetime.now().strftime('%Y-%m-%d')
         start_date = (datetime.now() - timedelta(days=60 if pipeline=="daily" else 365)).strftime('%Y-%m-%d')
@@ -92,16 +96,17 @@ class PipelineOrchestrator:
                     all_signals.append(signal_data)
                     self.trading_agent.trade(recommendations, pipeline=pipeline)
             except Exception as e:
-                self.logger.error(f"Orchestrator: Error processing ticker [{ticker}]", error=str(e))
+                self.logger.error(f"Orchestrator: Error [{ticker}]", error=str(e))
 
         self.persistence.save_signals(all_signals, pipeline)
-        self.logger.info(f"Orchestrator: {pipeline.upper()} pipeline complete in {time.time() - start_time:.2f}s")
         
         if all_signals:
-            broadcast_alert(self.generate_signal_report(pipeline))
+            report = self.generate_signal_report(pipeline)
+            # Add Market Context to report
+            market_note = "\n📉 *Kondisi Pasar*: Bearish (Risiko dikurangi 50%)" if regime_res['regime'] == "BEAR" else "\n📈 *Kondisi Pasar*: Bullish (Tancap Gas)"
+            broadcast_alert(report + market_note)
 
     def handle_panic_exit(self) -> str:
-        self.logger.critical("Orchestrator: PANIC EXIT TRIGGERED!")
         results = []
         for name, portfolio in self.trading_agent.portfolios.items():
             tickers = list(portfolio.positions.keys())
@@ -109,13 +114,11 @@ class PipelineOrchestrator:
                 portfolio.update_position(ticker, portfolio.positions[ticker]["shares"], 0, "SELL")
                 results.append(f"• {ticker} Sold")
             portfolio.save_state()
-        return "🚨 *PANIC EXIT EXECUTED!*\nSemua posisi dicairkan sayang. 🛡️" if results else "🌸 Portofolio sudah kosong sayang."
+        return "🚨 *PANIC EXIT!* Semua posisi dicairkan sayang. 🛡️" if results else "🌸 Kosong sayang."
 
     def generate_signal_report(self, pipeline: str) -> str:
         signals = self.persistence.load_signals(pipeline)
-        if not signals: return f"🌸 *Ayang Glu-Stock ({pipeline.upper()})*\n_Lagi sepi sinyal nih sayang..._"
-        
-        brain_info = self.strategy_agent.ml_predictor.get_info()
+        if not signals: return f"🌸 *Ayang Glu-Stock ({pipeline.upper()})*\n_Lagi sepi sinyal..._"
         report = f"🎯 *SINYAL TRADING ({pipeline.upper()})*\n📅 `{datetime.now().strftime('%Y-%m-%d %H:%M')}`\n\n"
         for s in signals:
             icon = "🚀" if s['signal'] == "BUY" else "🔻"
@@ -125,9 +128,9 @@ class PipelineOrchestrator:
 
     def handle_status_command(self) -> str:
         stats = self.sys_monitor.get_status()
+        regime = self.regime_detector.get_market_regime()
         msg = "🔋 *KONDISI HP AYANG*\n"
-        msg += f"⚡ Bat: `{stats['battery_pct']}%` | 🌡 `{stats['battery_temp']}°C` | 🧠 RAM: `{stats['ram_usage']}%`\n\n"
-        
+        msg += f"⚡ Bat: `{stats['battery_pct']}%` | 🌡 `{stats['battery_temp']}°C` | 📈 Market: `{regime['regime']}`\n\n"
         port_stats = self.trading_agent.get_status({})
         msg += "📊 *Portfolio Recap:*\n"
         for name, p in port_stats.items():
@@ -136,7 +139,6 @@ class PipelineOrchestrator:
 
     def handle_history_command(self, cmd_text: str) -> str:
         logs = self.history.get_history(limit=5)
-        if not logs: return "🌸 Belum ada riwayat nih sayang..."
         msg = f"📜 *CATATAN TRADING (5 Terakhir)*\n\n"
         for log in logs:
             msg += f"{'✅' if log['action']=='BUY' else '❌'} *{log['ticker']}* @ `{log['price']:,.0f}`\n"

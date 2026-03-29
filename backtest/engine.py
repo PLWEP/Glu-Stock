@@ -8,11 +8,12 @@ from strategies.daily import DailyStrategy
 from strategies.weekly import WeeklyStrategy
 from strategies.monthly import MonthlyStrategy
 from utils.performance import calculate_performance_metrics
+from data.backtest_db import BacktestRegistry
 
 class HistoricalBacktester:
     """
     Simulates trading strategies on historical data with OOS support.
-    Includes realistic 0.3% transaction cost (Slippage + Commissions).
+    Includes realistic 0.3% transaction cost.
     """
 
     def __init__(self, initial_cash: float = 100000000.0, fee_pct: float = 0.003):
@@ -20,6 +21,7 @@ class HistoricalBacktester:
         self.fee_pct = fee_pct
         self.data_handler = StockDataHandler()
         self.feature_engineer = FeatureEngineer()
+        self.registry = BacktestRegistry()
         self.strategies = {
             "daily": DailyStrategy(),
             "weekly": WeeklyStrategy(),
@@ -54,6 +56,9 @@ class HistoricalBacktester:
             "is": self._simulate(signals_df.iloc[:split_idx]),
             "oos": self._simulate(signals_df.iloc[split_idx:])
         }
+        
+        # 5. Log to Registry
+        self.registry.log_backtest(pipeline, ticker, results)
         
         return results
 
