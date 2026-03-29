@@ -84,6 +84,32 @@ class TradingDatabase:
                 VALUES (?, ?, ?, ?)
             """, (datetime.now().isoformat(), equity, cash, positions_value))
 
+    def get_performance_stats(self) -> Dict[str, float]:
+        """ Returns win rate and payoff ratio for Kelly Criterion. """
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT pnl FROM trades WHERE status = 'CLOSED'")
+            pnls = [row[0] for row in cursor.fetchall() if row[0] is not None]
+            
+            if not pnls:
+                return {"win_rate": 0.5, "win_loss_ratio": 1.5, "total_trades": 0}
+                
+            wins = [p for p in pnls if p > 0]
+            losses = [abs(p) for p in pnls if p < 0]
+            
+            win_rate = len(wins) / len(pnls)
+            avg_win = sum(wins) / len(wins) if wins else 0
+            avg_loss = sum(losses) / len(losses) if losses else 0
+            
+            # Payoff Ratio (b in Kelly)
+            win_loss_ratio = avg_win / avg_loss if avg_loss > 0 else 1.5
+            
+            return {
+                "win_rate": win_rate,
+                "win_loss_ratio": win_loss_ratio,
+                "total_trades": len(pnls)
+            }
+
     def count_trades(self) -> int:
         with sqlite3.connect(self.db_path) as conn:
             return conn.execute("SELECT COUNT(*) FROM trades").fetchone()[0]

@@ -100,16 +100,16 @@ class UniverseSelectionAgent:
         return top_tickers
 
 class TradingAgent:
-    """ Handles execution with Markowitz-optimized allocation. """
+    """ Handles execution with multi-level position sizing (Fixed, Volatility, Kelly). """
     def __init__(self, initial_cash: float = None):
-        config = ConfigLoader().get_config()
-        self.cash = initial_cash or config.get("initial_cash", 100000000.0)
+        self.config = ConfigLoader().get_config()
+        self.cash = initial_cash or self.config.get("initial_cash", 100000000.0)
         self.execution_engine = ExecutionEngine()
         self.risk_manager = RiskManager()
-        self.research_agent = ResearchAgent() # Needed for Markowitz volatilties
+        self.db = TradingDatabase()
         
         self.portfolios: Dict[str, Portfolio] = {}
-        strat_settings = config.get("strategies", {})
+        strat_settings = self.config.get("strategies", {})
         
         for name, settings in strat_settings.items():
             cap = self.cash * settings.get("allocation_pct", 0.33)
@@ -125,22 +125,41 @@ class TradingAgent:
         last_row = df.iloc[-1]
         action = last_row.get('recommendation', 'HOLD')
         
-        # Check for Trailing Stop Exit First
+        # 1. Trailing Stop Exit Check (Safety First)
         if ticker in portfolio.positions:
-            pos = portfolio.positions[ticker]
-            # Use ATR stop if price falls below it
             if last_row['close'] < last_row.get('atr_stop', 0):
-                action = "SELL" # Force exit
+                action = "SELL"
 
         if action == "HOLD": return
 
         if action == "BUY":
-            # 1. MARKOWITZ OPTIMIZATION (Allocation)
-            # Fetch historical data for all candidates to calculate relative vol
-            # (Simplified: using 10% base but can be refined with Markowitz weights if we have multiple buys)
-            # For now, we use Markowitz as a position-sizing modifier
-            allocation = portfolio.initial_capital * 0.1 
-            shares = self.risk_manager.calculate_position_size(allocation, last_row['close'], 0.02) # Use 2% portfolio risk
+            # 2. ADVANCED POSITION SIZING
+            risk_cfg = self.config.get("risk", {})
+            mode = risk_cfg.get("position_sizing_mode", "FIXED").upper()
+            risk_pct = risk_cfg.get("risk_per_trade_pct", 0.01)
+            
+            # Re-sync RiskManager with local config
+            self.risk_manager.risk_per_trade = risk_pct
+            
+            if mode == "VOLATILITY":
+                shares = self.risk_manager.calculate_volatility_adjusted_size(
+                    portfolio.total_equity, last_row['close'], 
+                    last_row.get('atr', 0), multiplier=risk_cfg.get('atr_multiplier', 2.0)
+                )
+            elif mode == "KELLY":
+                stats = self.db.get_performance_stats()
+                shares = self.risk_manager.calculate_kelly_size(
+                    portfolio.total_equity, last_row['close'],
+                    stats['win_rate'], stats['win_loss_ratio'], 
+                    fraction=risk_cfg.get('kelly_fraction', 0.5)
+                )
+            else: # FIXED FRACTIONAL
+                shares = self.risk_manager.calculate_fixed_fractional_size(
+                    portfolio.total_equity, last_row['close'], 
+                    self.config['strategies'][pipeline.lower()]['sl_pct']
+                )
+
+            # Safeguard: Never trade more than available cash
             max_shares = int(portfolio.available_to_trade / last_row['close'])
             shares = min(shares, max_shares)
         else:

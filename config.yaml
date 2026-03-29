@@ -48,3 +48,7 @@ intelligence:
 risk:
   max_drawdown_limit: 0.15
   profit_freeze: true
+  position_sizing_mode: "VOLATILITY" # FIXED, VOLATILITY, KELLY
+  risk_per_trade_pct: 0.01          # 1% risk of equity per trade
+  kelly_fraction: 0.5               # Half-Kelly for safety
+  atr_multiplier: 2.0               # For Volatility Targeting
