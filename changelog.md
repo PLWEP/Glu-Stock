@@ -1,18 +1,27 @@
 # Changelog
 
-## [v3.1.0] - 2026-03-29
+## [v8.0.0] - 2026-03-29
 ### Added
-- **Intelligence Layer (Phase 3)**:
-    - `FundamentalAgent`: Financial ratio scoring (ROE, P/E, DER, Div Yield).
-    - `MLPredictor`: Decoupled Machine Learning inference engine using Random Forest.
-    - `ml_trainer_pc.py`: High-power training utility for PC/Laptop environment.
-    - `train_intel.py`: Orchestrated training trigger.
-- **Reporting**: Intelligence badges (`🧠`, `🤖`) for high-confidence trades in Telegram/WhatsApp.
+- **Strategic Master (Phase 8)**:
+    - `StrategyAllocator`: Dynamic inter-strategy capital rebalancing based on Sharpe ratios.
+    - **Rolling Matrix**: Implemented rolling 30-day covariance with Ledoit-Wolf shrinkage in `RiskManager`.
+    - **Expectancy Safeguard**: Automated safety gate in `Orchestrator` to skip trades with negative expectancy.
+- **Quantitative Validation (Phase 7)**:
+    - `HistoricalBacktester`: Full-featured engine with OOS support and 0.3% slippage simulation.
+    - `MonteCarloSimulator`: 1000-path randomization for Risk of Ruin calculation.
+- **Advanced Money Management (Phase 6)**:
+    - Multi-tier position sizing: Kelly Criterion and Volatility Targeting (ATR-based).
+- **Quant Analytics (Phase 5)**:
+    - Real-time calculation of Sharpe, Sortino, and Calmar ratios.
+- **Risk & Resilience (Phase 4)**:
+    - ATR Trailing stops and Hardware-Aware Throttling (Thermal/Battery guards).
 
 ### Changed
-- Refactored `agents.py` to integrate Intelligence analysis into the trading pipeline.
-- Centralized all strategy and risk parameters in `config.yaml`.
-- Optimized `MLPredictor` for lean inference on Termux using pre-trained `.joblib` models.
+- Integrated **Strategic Pulse** metrics into Telegram/WhatsApp reporting.
+- Refactored `Orchestrator` to support dynamic capital re-injection between strategy clusters.
+
+## [v3.1.0] - 2026-03-29
+...
 
 ## [v2.0.0] - 2026-03-29
 ### Added

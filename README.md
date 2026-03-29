@@ -9,6 +9,23 @@ Glu-Stock now features an advanced intelligence layer to filter "junk" stocks an
 - **ML Price Predictor**: Uses a **Random Forest** classification model to predict price increase probability. 
 - **Decoupled Architecture**: Training is performed on a PC/Laptop (heavy lifting) while Termux handles lean, fast inference.
 
+## 🛡️ Risk & Resilience (Phase 4-5)
+
+Glu-Stock is built for 24/7 stability on mobile/Termux:
+- **ATR Trailing Stop**: Dynamic stop-loss that follows price action to lock in profits.
+- **Hardware-Aware Throttling**: Automatically pauses scans if phone temperature >45°C or battery <15%.
+- **Panic Exit**: Instant liquidation of all positions via `/panic` command.
+- **Quant Metrics**: real-time calculation of **Sharpe, Sortino, and Calmar Ratios**.
+
+## 🏦 Strategic Master (Phase 6-8)
+
+Professional-grade capital management and validation:
+- **Multi-Tier Sizing**: Choose between **Fixed Fractional, Volatility Targeting (ATR), or Kelly Criterion**.
+- **Strategy Rebalancer**: Automatically shifts capital between Daily, Weekly, and Monthly pipelines based on relative performance.
+- **OOS Backtester**: Validates strategies on unseen historical data with 0.3% slippage.
+- **Monte Carlo Simulator**: Calculates **Risk of Ruin** and worst-case drawdowns across 1000 randomized scenarios.
+- **Expectancy Gate**: Prevents trading if the strategy's statistical edge (Expectancy) falls below zero.
+
 ## 📱 Termux Quick Start (Recommended)
 
 1. **Install Termux API App**:
@@ -43,26 +60,19 @@ Training on Termux is restricted. Perform training on your PC/Laptop and export 
 2. **Transfer Brain**:
    Copy `data/models/glu_brain_v1.joblib` from PC to `~/Glu-Stock/data/models/` on Termux.
 
-## ⚙️ Configuration (config.yaml)
-
-Key parameters are centralized in `config.yaml`:
-- **Initial Cash**: Rp 100M default.
-- **Risk**: TP/SL levels, Max Drawdown, and Profit Freeze.
-- **Intelligence**: Thresholds for ROE, P/E, and ML Confidence.
-
 ## 🤖 Bot Commands
 
 - `/start`: Open Main Menu.
-- `/status`: System health (RAM/Bat/Temp) + **Intel Status**.
-- `/portfolio`: Performance summary (Daily/Weekly/Monthly).
+- `/status`: System health (RAM/Bat/Temp) + **Portfolio Recap**.
 - `/signals`: Latest recommendations with **Intel Badges (`🧠`, `🤖`)**.
+- `/panic`: Liquidate all positions immediately.
+- `/history`: View last 5-10 closed trades.
 - `/logs`: View rotating system logs.
 
 ## 🛠️ Tech Stack
 - **Python 3.13**: Quant engine, Scikit-Learn, joblib, yfinance.
 - **Node.js 22+**: Baileys (WhatsApp) bridge.
-- **SQLite**: High-performance bulk-caching and log audit trail.
-- **PM2**: Resilient process management.
+- **SQLite**: High-performance bulk-caching and long-term trade audit trail.
 
 ---
-*Institutional Grade | ML Powered | Secure & Robust*
+*Institutional Grade | ML Powered | Strategically Optimized*

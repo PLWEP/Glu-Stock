@@ -2,52 +2,59 @@
 
 ## Project Overview
 
-Glu-Stock is an institutional-grade, multi-agent quantitative trading engine optimized for the IDX (Indonesia Stock Exchange). It features a 24/7 autonomous lifecycle, intelligent signal confirmation (Fundamentals + ML), and dual-platform monitoring via Telegram and WhatsApp.
+Glu-Stock is an institutional-grade, multi-agent quantitative trading engine optimized for the IDX (Indonesia Stock Exchange). It features a 24/7 autonomous lifecycle, intelligent signal confirmation, and dual-platform monitoring.
+
+## 📊 Module Logic: Strategic Master (v8.0.0)
+
+Final layer of quant-governance to avoid fixed-parameter traps.
+
+- **Inter-Strategy Allocation**: 
+    - **Logic**: Dynamically rebalances capital between Daily, Weekly, and Monthly pipelines.
+    - **Weighting**: Uses Sharpe/Sortino-based Inverse Variance weighting.
+- **Expectancy Safeguard**:
+    - **Gatekeeper**: Automated check before every scan. If a strategy's 30-day Expectancy is < 0, the scan is skipped and alerted.
+- **Rolling Matrix**:
+    - **Method**: Rolling 30-day Covariance with Ledoit-Wolf Shrinkage for high stability in volatile IDX market shifts.
+
+## 🔬 Module Logic: Quantitative Validation (v7.0.0)
+
+Scientific verification before capital exposure.
+
+- **Out-of-Sample (OOS) Testing**: Splits historical data into train/test sets. Validates signals on unseen data with 0.3% slippage.
+- **Monte Carlo Simulation**: Shuffles historical trades 1000 times to calculate **Risk of Ruin** and worst-case drawdowns.
+- **Statistical Pulse**: Every report includes **Expectancy (Value per trade)** and **Confidence Score** (based on sample size N).
+
+## 🏦 Module Logic: Money Management (v6.0.0)
+
+Professional position sizing beyond fixed percentages.
+
+- **Volatility Targeting**: Uses ATR to size positions so each trade has an equal impact on the portfolio.
+- **Kelly Criterion**: Mathematically maximizes growth using real win rates and reward-to-risk ratios.
+
+## 🛡️ Module Logic: Resilience & Monitoring (v4.0.0)
+
+- **Hardware-Aware Throttling**: PSUtil-based monitoring. Pauses if Temp > 45°C or Battery < 15%.
+- **ATR Trailing Stop**: Only moves UP to protect unrealized gains during vertical price action.
+- **Panic Exit**: Instant `/panic` command to liquidate all clusters immediately.
 
 ## 🧠 Module Logic: Intelligence Layer (v3.1.0)
 
 The Intelligence Layer adds a "brain" to the system to filter quality and predict confidence.
 
-- **Fundamental Analyst Agent**: 
-    - **Logic**: Evaluates stocks based on P/E, ROE, DER, and Dividend Yield.
-    - **Scoring**: Composite score (0-1). Signals are only approved if score >= 0.6.
-    - **Integration**: Filters the universe for long-term (Weekly/Monthly) pipelines.
-- **ML Price Predictor (Decoupled)**:
-    - **Strategy**: Offloads training to high-power PC/Laptop. Termux performs lean inference.
-    - **Model**: Random Forest Classifier trained on 5+ years of historical data.
-    - **Features**: RSI, MACD_diff, SMA, EMA, and Volatility.
-    - **Confidence**: Every trade signal is assigned a probability (0-100%).
-- **Status:** Production-ready & Decoupled.
+- **Fundamental Analyst Agent**: Evaluates stocks based on P/E, ROE, DER, and Dividend Yield.
+- **ML Price Predictor (Decoupled)**: Offloads training to high-power PC/Laptop. Termux performs lean inference.
 
 ## 🛡️ Module Logic: Hardening & Stability (v2.0.0)
 
-System stability is enforced via aggressive log and error management.
-
-- **Logging**: `JsonLogger` with `RotatingFileHandler` (5MB limit, 3 backups) and SQLite audit trail.
-- **Alert Resilience**: Alert recursion guard prevents infinite loops during API or network failures.
-- **Security**: WhatsApp command execution uses `child_process.spawn` with argument arrays to prevent shell injection.
+- **Logging**: `JsonLogger` with `RotatingFileHandler` (5MB limit) and SQLite audit trail.
+- **Alert Resilience**: Alert recursion guard prevents infinite loops.
 - **Data Performance**: `StockDataHandler` uses bulk SQL `executemany` for 10x faster caching.
-- **Strategic Accuracy**: VWAP calculation resets daily to ensure accurate intraday signals.
 
-## ⚙️ Module Logic: Configuration (v1.5.0)
+## 🤖 Module Logic: Bots & Configuration
 
-All technical and risk parameters are externalized in `config.yaml`.
-
-- **Risk Management**: Mandatory Stop-Loss (SL), Take-Profit (TP), and Drawdown limits.
-- **Profit Freeze**: Optional mechanism to lock capital when profit thresholds are met.
-- **Strategy Specs**: Per-pipeline TP/SL, allocation percentage, and ML confidence thresholds.
-
-## 🤖 Module Logic: Bots & Monitoring
-
-- **Telegram Bot**: Interactive "Ayang" persona with button-based command center. Resilient polling with backoff.
-- **WhatsApp Bot**: Baileys-based bridge for 24/7 alerts and dual-platform notifications.
-- **Telemetry**: Real-time monitoring of RAM, Battery, and Temperature via Termux:API.
-
-## 📂 Module Logic: Core Components
-
-- **Universe Selection Agent**: Dynamic curation based on Rp25B/500k lot liquidity and LQ45 priority.
-- **Research Agent**: Multi-interval data fetching (15m, 1h, 1d) with zero lookahead bias.
-- **Execution Engine**: Paper trading with Long-Only enforcement and automated trade logging.
+- **Telegram Bot**: Interactive "Ayang" persona.
+- **WhatsApp Bot**: Baileys-based bridge for 24/7 mirroring.
+- **Strategy Specs**: Parameters centralized in `config.yaml`.
 
 ## Core Execution Rules
 
