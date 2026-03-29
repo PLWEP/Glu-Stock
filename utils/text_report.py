@@ -7,7 +7,7 @@ from utils.performance import calculate_performance_metrics
 class TextReportGenerator:
     """
     Generates clean Markdown reports specifically for Telegram notifications.
-    Supports daily, weekly, and monthly timeframes.
+    Supports daily, weekly, and monthly timeframes with risk-adjusted metrics.
     """
     
     def __init__(self):
@@ -15,7 +15,7 @@ class TextReportGenerator:
 
     def generate_report(self, days: int, interval_name: str, candidates: List[Dict[str, Any]] = None) -> str:
         """
-        Generic generator for periodic reports with strict fallback requirements.
+        Generic generator for periodic reports with risk-adjusted scores.
         """
         now = datetime.now()
         start_period = now - timedelta(days=days)
@@ -26,13 +26,11 @@ class TextReportGenerator:
             all_trades = self.db.get_all_trades()
             all_snaps = self.db.get_portfolio_history()
             
-            # Filter trades by entry_date (ISO format)
             period_trades = [
                 t for t in all_trades 
                 if datetime.fromisoformat(t['entry_date']) >= start_period
             ]
             
-            # Filter snapshots by date (ISO format)
             period_snaps = [
                 s for s in all_snaps 
                 if datetime.fromisoformat(s['date']) >= start_period
@@ -53,7 +51,6 @@ class TextReportGenerator:
                 msg += "\n🌸 Hari ini Ayang belum lihat ada transaksi nih...\n"
                 if candidates:
                     msg += "Tapi Ayang lagi pantau ini buat kamu:\n"
-                    # Format: - TICKER (score 0.XX)
                     for c in candidates[:5]:
                         score = c.get('score', 0)
                         msg += f"- {c['ticker']} (Skor {score:.2f})\n"
@@ -68,6 +65,9 @@ class TextReportGenerator:
             msg += f"🎯 Win Rate: {metrics['win_rate']*100:.1f}%\n"
             msg += f"📉 Penurunan (DD): {metrics['max_drawdown']*100:.1f}%\n"
             
+            # 6. Risk Score Section (Sharpe, Sortino, Calmar)
+            msg += f"📊 *Risk Score*: `S:{metrics['sharpe_ratio']:.2f}` | `T:{metrics['sortino_ratio']:.2f}` | `C:{metrics['calmar_ratio']:.2f}`\n"
+            
             msg += f"\n✅ *Transaksi Kita ({len(period_trades)})*:\n"
             limit = 5 if days <= 1 else 10
             for t in period_trades[:limit]:
@@ -78,6 +78,7 @@ class TextReportGenerator:
             if len(period_trades) > limit:
                 msg += f"_...dan {len(period_trades)-limit} lainnya ya sayang_"
 
+            msg += "\n\n_Tetap jaga manajemen risiko ya sayang!_ 💖"
             return msg
 
         except Exception as e:
@@ -91,20 +92,3 @@ class TextReportGenerator:
 
     def generate_monthly_report(self, candidates: List[Dict[str, Any]] = None) -> str:
         return self.generate_report(30, "Monthly", candidates=candidates)
-
-if __name__ == "__main__":
-    import sys
-    # Quick test for fallback logic
-    gen = TextReportGenerator()
-    mock_candidates = [
-        {"ticker": "ADRO", "score": 0.4523},
-        {"ticker": "MDKA", "score": 0.4211}
-    ]
-    print("--- DAILY REPORT (No Trades) ---")
-    try:
-        report = gen.generate_daily_report(candidates=mock_candidates)
-        print(report)
-    except UnicodeEncodeError:
-        # Fallback for Windows terminal
-        report = gen.generate_daily_report(candidates=mock_candidates)
-        print(report.encode(sys.stdout.encoding, errors='replace').decode(sys.stdout.encoding))
