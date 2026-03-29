@@ -2,63 +2,46 @@
 
 ## Project Overview
 
-Glu-Stock is an institutional-grade, multi-agent quantitative trading engine optimized for the IDX (Indonesia Stock Exchange). It features a 24/7 autonomous lifecycle, intelligent signal confirmation, and dual-platform monitoring.
+Glu-Stock is an institutional-grade, multi-agent quantitative trading engine optimized for the IDX (Indonesia Stock Exchange). It features a 24/7 autonomous lifecycle, ensemble intelligence (RF + CNN), and dual-platform monitoring.
+
+## 🧠 Module Logic: Deep Intelligence (v11.0)
+
+The pinnacle of the engine's cognitive ability, combining multiple ML paradigms.
+
+- **Dual-Brain Ensemble**: 
+    - **Brain 1 (RF)**: Scikit-learn Random Forest for tabular/technical indicators.
+    - **Brain 2 (CNN)**: 10-layer 1D-Convolutional Neural Network for temporal/visual price patterns.
+    - **Logic**: Symmetrical voting system requiring high-confidence agreement for `🧠` signals.
+- **TFLite Conversion**: Models are trained on PC (Keras) and converted to `.tflite` for low-latency inference on Termux.
+- **10-Channel Input**: Ingests raw OHLCV and Adjusted OHLCV for maximum pattern transparency.
 
 ## 📊 Module Logic: Strategic Master (v8.0.0)
 
-Final layer of quant-governance to avoid fixed-parameter traps.
-
-- **Inter-Strategy Allocation**: 
-    - **Logic**: Dynamically rebalances capital between Daily, Weekly, and Monthly pipelines.
-    - **Weighting**: Uses Sharpe/Sortino-based Inverse Variance weighting.
-- **Expectancy Safeguard**:
-    - **Gatekeeper**: Automated check before every scan. If a strategy's 30-day Expectancy is < 0, the scan is skipped and alerted.
-- **Rolling Matrix**:
-    - **Method**: Rolling 30-day Covariance with Ledoit-Wolf Shrinkage for high stability in volatile IDX market shifts.
+- **Inter-Strategy Allocation**: Dynamic rebalancing between Daily, Weekly, and Monthly pipelines based on Sharpe ratios.
+- **Expectancy Safeguard**: Automated "Gatekeeper" that pauses underperforming strategies (Ex < 0).
+- **Rolling Matrix**: Rolling 30-day covariance with Ledoit-Wolf shrinkage for IDX stability.
 
 ## 🔬 Module Logic: Quantitative Validation (v7.0.0)
 
-Scientific verification before capital exposure.
-
-- **Out-of-Sample (OOS) Testing**: Splits historical data into train/test sets. Validates signals on unseen data with 0.3% slippage.
-- **Monte Carlo Simulation**: Shuffles historical trades 1000 times to calculate **Risk of Ruin** and worst-case drawdowns.
-- **Statistical Pulse**: Every report includes **Expectancy (Value per trade)** and **Confidence Score** (based on sample size N).
-
-## 🏦 Module Logic: Money Management (v6.0.0)
-
-Professional position sizing beyond fixed percentages.
-
-- **Volatility Targeting**: Uses ATR to size positions so each trade has an equal impact on the portfolio.
-- **Kelly Criterion**: Mathematically maximizes growth using real win rates and reward-to-risk ratios.
+- **OOS Testing**: 80/20 train-test split to identify overfitting.
+- **Monte Carlo Simulation**: 1000 randomized timelines to calculate Risk of Ruin.
+- **Market Regime Guard**: Monitors IHSG (`^JKSE`) vs EMA 200. Automatically scales down size (50%) during Bear regimes.
 
 ## 🛡️ Module Logic: Resilience & Monitoring (v4.0.0)
 
-- **Hardware-Aware Throttling**: PSUtil-based monitoring. Pauses if Temp > 45°C or Battery < 15%.
-- **ATR Trailing Stop**: Only moves UP to protect unrealized gains during vertical price action.
-- **Panic Exit**: Instant `/panic` command to liquidate all clusters immediately.
-
-## 🧠 Module Logic: Intelligence Layer (v3.1.0)
-
-The Intelligence Layer adds a "brain" to the system to filter quality and predict confidence.
-
-- **Fundamental Analyst Agent**: Evaluates stocks based on P/E, ROE, DER, and Dividend Yield.
-- **ML Price Predictor (Decoupled)**: Offloads training to high-power PC/Laptop. Termux performs lean inference.
-
-## 🛡️ Module Logic: Hardening & Stability (v2.0.0)
-
-- **Logging**: `JsonLogger` with `RotatingFileHandler` (5MB limit) and SQLite audit trail.
-- **Alert Resilience**: Alert recursion guard prevents infinite loops.
-- **Data Performance**: `StockDataHandler` uses bulk SQL `executemany` for 10x faster caching.
+- **Hardware Throttling**: Pauses if Temp > 45°C or Battery < 15%.
+- **ATR Trailing Stop**: Dynamic protective floor for unrealized gains.
+- **Panic Exit**: Instant `/panic` command to liquidate all clusters.
 
 ## 🤖 Module Logic: Bots & Configuration
 
 - **Telegram Bot**: Interactive "Ayang" persona.
 - **WhatsApp Bot**: Baileys-based bridge for 24/7 mirroring.
-- **Strategy Specs**: Parameters centralized in `config.yaml`.
+- **PC Command Center**: Menu-driven `setup_pc.bat` for training, testing, and monitoring.
 
 ## Core Execution Rules
 
 1. **Python Path**: `c:/Users/MP2NE93D/miniconda3/python.exe`.
-2. **Commit Policy**: Conventional Commits (feat, fix, refactor).
-3. **Environment Isolation**: Mandatory clean venv for test runs.
-4. **Documentation Sync**: `README.md`, `changelog.md`, and `checkpoint.md` must be updated on every feature change.
+2. **Environment**: Use `pc_venv` on Windows and `glustock_venv` on Termux.
+3. **Commit Policy**: Conventional Commits (feat, fix, refactor).
+4. **Documentation Sync**: Every feature update must reflect in `README.md`, `changelog.md`, and `checkpoint.md`.

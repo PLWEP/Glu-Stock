@@ -1,24 +1,21 @@
 # Changelog
 
-## [v8.0.0] - 2026-03-29
+## [v11.0.0] - 2026-03-29
 ### Added
-- **Strategic Master (Phase 8)**:
-    - `StrategyAllocator`: Dynamic inter-strategy capital rebalancing based on Sharpe ratios.
-    - **Rolling Matrix**: Implemented rolling 30-day covariance with Ledoit-Wolf shrinkage in `RiskManager`.
-    - **Expectancy Safeguard**: Automated safety gate in `Orchestrator` to skip trades with negative expectancy.
-- **Quantitative Validation (Phase 7)**:
-    - `HistoricalBacktester`: Full-featured engine with OOS support and 0.3% slippage simulation.
-    - `MonteCarloSimulator`: 1000-path randomization for Risk of Ruin calculation.
-- **Advanced Money Management (Phase 6)**:
-    - Multi-tier position sizing: Kelly Criterion and Volatility Targeting (ATR-based).
-- **Quant Analytics (Phase 5)**:
-    - Real-time calculation of Sharpe, Sortino, and Calmar ratios.
-- **Risk & Resilience (Phase 4)**:
-    - ATR Trailing stops and Hardware-Aware Throttling (Thermal/Battery guards).
+- **Deep Intelligence (Phase 11)**:
+    - **1D-CNN Brain**: Implemented 10-layer Convolutional Neural Network for temporal pattern recognition.
+    - **Dual-Brain Ensemble**: Integrated CNN + Random Forest voting logic in `StrategyAgent`.
+    - **TFLite Inference**: Optimized `.tflite` interpreter for high-speed CNN execution on Termux.
+- **DevOps & Training**:
+    - `train_intel.py`: Unified script for training both RF and CNN intelligence layers.
+    - `setup_pc.bat`: Comprehensive PC Command Center for environment setup, training, and testing.
 
 ### Changed
-- Integrated **Strategic Pulse** metrics into Telegram/WhatsApp reporting.
-- Refactored `Orchestrator` to support dynamic capital re-injection between strategy clusters.
+- Refactored `Orchestrator` signal reports to display dual-brain (ML/CNN) confidence scores.
+- Updated `requirements.txt` to include `tensorflow` and `scipy` for deep learning support.
+
+## [v8.0.0] - 2026-03-29
+...
 
 ## [v3.1.0] - 2026-03-29
 ...

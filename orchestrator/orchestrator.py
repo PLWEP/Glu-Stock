@@ -88,7 +88,9 @@ class PipelineOrchestrator:
                         "timestamp": str(last_row.name),
                         "close": last_row['close'],
                         "signal": last_row['recommendation'],
-                        "confidence": last_row.get('ml_confidence', 0.5),
+                        "ml_conf": last_row.get('ml_confidence', 0.5),
+                        "cnn_conf": last_row.get('cnn_confidence', 0.5),
+                        "ens_conf": last_row.get('ensemble_confidence', 0.5),
                         "tp1": last_row['tp1'],
                         "tp2": last_row['tp2'],
                         "sl": last_row['sl_level'],
@@ -122,8 +124,12 @@ class PipelineOrchestrator:
         report = f"🎯 *SINYAL TRADING ({pipeline.upper()})*\n📅 `{datetime.now().strftime('%Y-%m-%d %H:%M')}`\n\n"
         for s in signals:
             icon = "🚀" if s['signal'] == "BUY" else "🔻"
-            intel = "🧠" if s.get('confidence', 0) > 0.7 else ""
-            report += f"{icon} *{s['ticker']}* {intel}\nPrice: `{s['close']:,.0f}` | Conf: `{s.get('confidence', 0):.0%}`\n🎯 TP: `{s['tp1']:,.0f}` | 🧱 SL: `{s['sl']:,.0f}`\n\n"
+            # Badge if Ensemble confidence is high
+            intel = "🧠" if s.get('ens_conf', 0) > 0.7 else ""
+            report += f"{icon} *{s['ticker']}* {intel}\n"
+            report += f"Price: `{s['close']:,.0f}` | Ens: `{s.get('ens_conf', 0):.0%}`\n"
+            report += f"CNN: `{s.get('cnn_conf', 0):.0%}` | ML: `{s.get('ml_conf', 0):.0%}`\n"
+            report += f"🎯 TP: `{s['tp1']:,.0f}` | 🧱 SL: `{s['sl']:,.0f}`\n\n"
         return report
 
     def handle_status_command(self) -> str:

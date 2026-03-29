@@ -1,14 +1,12 @@
-pandas
-yfinance
-ta
-schedule
-requests
-pyyaml
-python-dotenv
-psutil
-tenacity
-numpy
-scikit-learn
-xgboost
-joblib
-quantile-forest
+# Glu-Stock PC Dependencies
+yfinance>=0.2.50
+pandas>=2.2.0
+numpy>=1.26.0
+scikit-learn>=1.5.0
+joblib>=1.4.0
+tensorflow>=2.17.0
+requests>=2.32.0
+pyyaml>=6.0.1
+python-dotenv>=1.0.1
+psutil>=5.9.0
+scipy>=1.13.0

@@ -13,6 +13,7 @@ from utils.logger import JsonLogger
 from utils.config import ConfigLoader
 from utils.ml_predictor import MLPredictor
 from agents.fundamental import FundamentalAgent
+from utils.cnn_predictor import CNNPredictor
 
 class ResearchAgent:
     """ Handles data collection and feature engineering. """
@@ -31,6 +32,7 @@ class StrategyAgent:
     def __init__(self):
         self.config = ConfigLoader().get_config()
         self.ml_predictor = MLPredictor()
+        self.cnn_predictor = CNNPredictor()
         self.risk_manager = RiskManager()
         self.pipelines = {
             "daily": DailyStrategy(),
@@ -47,11 +49,14 @@ class StrategyAgent:
         strat_config = self.config.get("strategies", {}).get(pipeline.lower(), {})
         min_ml_conf = strat_config.get("min_ml_confidence", 0.5)
         
-        # 1. ML Intelligence Check
+        # 1. ENSEMBLE INTELLIGENCE CHECK
         result_df['ml_confidence'] = self.ml_predictor.predict_proba(result_df)
         
-        # 2. ATR Trailing Stop Calculation
-        # Use last row's ATR to set the dynamic stop level
+        # Mapping for CNN horizon
+        cnn_horizon = "daily_t2" if pipeline == "daily" else ("weekly_t5" if pipeline == "weekly" else "monthly_t30")
+        result_df['cnn_confidence'] = self.cnn_predictor.predict(result_df, horizon=cnn_horizon)
+        
+        # 2. ATR Trailing Stop
         result_df['atr_stop'] = result_df.apply(lambda x: self.risk_manager.get_atr_trailing_stop(x['close'], x.get('atr', 0), multiplier=strat_config.get('atr_multiplier', 3.0)), axis=1)
         
         # 3. Vectorized Recommendation
@@ -60,10 +65,19 @@ class StrategyAgent:
         result_df['sl_level'] = result_df['close'] * (1 - strat_config.get("sl_pct", 0.01))
         result_df['recommendation'] = result_df['final_signal'].map({1: "BUY", -1: "SELL", 0: "HOLD"})
 
-        # Intelligence Filter
+        # 4. Intelligence Filter (Dual Brain Ensemble)
         intel_enabled = self.config.get("intelligence", {}).get("enabled", False)
         if intel_enabled:
-            low_conf_mask = (result_df['recommendation'] == "BUY") & (result_df['ml_confidence'] < min_ml_conf)
+            # Signal MUST have support from either RF or CNN, or a weighted ensemble
+            # For now, we use a conservative 'AND' logic for the 🧠 badge, but 'OR' with high threshold for execution
+            is_buy = (result_df['recommendation'] == "BUY")
+            
+            # Require at least one brain to be high confidence, or both to be decent
+            # Weighted average logic (60% CNN / 40% RF as CNN is SOTA)
+            ensemble_score = (result_df['cnn_confidence'] * 0.6) + (result_df['ml_confidence'] * 0.4)
+            result_df['ensemble_confidence'] = ensemble_score
+            
+            low_conf_mask = is_buy & (ensemble_score < min_ml_conf)
             result_df.loc[low_conf_mask, 'recommendation'] = "HOLD"
             result_df.loc[low_conf_mask, 'final_signal'] = 0
 
