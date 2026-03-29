@@ -24,9 +24,6 @@ class TelegramBot:
         self.token = os.environ.get("TELEGRAM_BOT_TOKEN")
         self.chat_id = os.environ.get("TELEGRAM_CHAT_ID")
         
-        if not self.token:
-            print("❌ ERROR: TELEGRAM_BOT_TOKEN not found!")
-        
         self.api_url = f"https://api.telegram.org/bot{self.token}"
         self.logger = JsonLogger(log_file="logs/telegram_bot.log")
         self.orchestrator = PipelineOrchestrator()
@@ -39,14 +36,13 @@ class TelegramBot:
             "/start": self.handle_start,
             "/status": lambda: self.orchestrator.handle_status_command(),
             "/signals": self.handle_signals,
-            "/alert": self.handle_signals,
             "/portfolio": self.handle_portfolio_detailed,
-            "/recap": self.handle_portfolio_detailed,
             "/history": lambda cmd: self.orchestrator.handle_history_command(cmd),
             "/logs": lambda: self.orchestrator.handle_log_system_command("/log_system info 10"),
             "/log_system": lambda cmd: self.orchestrator.handle_log_system_command(cmd),
-            "/log-system": lambda cmd: self.orchestrator.handle_log_system_command(cmd),
-            "/report": self.handle_report
+            "/report": self.handle_report,
+            "/panic": self.handle_panic,
+            "/panic_confirm": self.handle_panic_confirm
         }
         
         self.set_bot_commands()
@@ -68,12 +64,11 @@ class TelegramBot:
     def set_bot_commands(self):
         url = f"{self.api_url}/setMyCommands"
         commands = [
-            {"command": "start", "description": "💖 Sapa Ayang & Menu"},
-            {"command": "status", "description": "🔋 Cek Kondisi HP Ayang (RAM/Bat)"},
-            {"command": "signals", "description": "🎯 Intip Sinyal Trading"},
-            {"command": "portfolio", "description": "📊 Cek Tabungan Kita"},
-            {"command": "history", "description": "📜 Liat Catatan Kemarin"},
-            {"command": "logs", "description": "📋 10 Kejadian Terakhir"}
+            {"command": "start", "description": "💖 Menu Utama"},
+            {"command": "status", "description": "🔋 Cek Kondisi HP"},
+            {"command": "signals", "description": "🎯 Intip Sinyal"},
+            {"command": "portfolio", "description": "📊 Cek Tabungan"},
+            {"command": "panic", "description": "🚨 JUAL SEMUA (Darurat)"}
         ]
         try: requests.post(url, json={"commands": commands}, timeout=10)
         except: pass
@@ -83,39 +78,45 @@ class TelegramBot:
         url = f"{self.api_url}/sendMessage"
         cid = target_chat_id or self.chat_id
         if not cid: return
-            
         payload = {"chat_id": cid, "text": text, "parse_mode": "Markdown"}
         if reply_markup: payload["reply_markup"] = reply_markup
-            
         try:
             r = requests.post(url, json=payload, timeout=10)
-            if not r.json().get("ok"):
-                self.logger.error(f"Telegram API Error: {r.text}", silent_alert=True)
-        except Exception as e:
-            self.logger.error("Telegram: Failed to send", silent_alert=True, error=str(e))
+            if not r.json().get("ok"): self.logger.error(f"Telegram API Error: {r.text}", silent_alert=True)
+        except Exception as e: self.logger.error("Telegram: Failed to send", silent_alert=True, error=str(e))
 
     def handle_start(self):
-        text = "💖 *Halo Sayang!*\n_Ayang siap bantu jagain trading kamu hari ini. Mau cek apa nih?_"
+        text = "💖 *Halo Sayang!*\n_Ayang siap bantu jagain trading kamu hari ini._"
         keyboard = {
             "inline_keyboard": [
-                [{"text": "📊 Tabungan Kita", "callback_data": "/portfolio daily"}, {"text": "🎯 Sinyal", "callback_data": "/signals daily"}],
+                [{"text": "📊 Portofolio", "callback_data": "/portfolio daily"}, {"text": "🎯 Sinyal", "callback_data": "/signals daily"}],
                 [{"text": "🔋 Kondisi HP", "callback_data": "/status"}, {"text": "📜 Catatan", "callback_data": "/history"}],
-                [{"text": "📂 Daleman Ayang", "callback_data": "/logs"}]
+                [{"text": "🚨 PANIC EXIT (SELL ALL)", "callback_data": "/panic"}]
             ]
         }
         self.send_message(text, reply_markup=keyboard)
 
+    def handle_panic(self):
+        text = "⚠️ *KONFIRMASI PANIC EXIT*\n\n_Sayang yakin mau jual SEMUA posisi aktif sekarang? Tindakan ini tidak bisa dibatalkan!_"
+        keyboard = {
+            "inline_keyboard": [
+                [{"text": "✅ IYA, JUAL SEMUA!", "callback_data": "/panic_confirm"}],
+                [{"text": "❌ GAK JADI SAYANG", "callback_data": "/start"}]
+            ]
+        }
+        self.send_message(text, reply_markup=keyboard)
+
+    def handle_panic_confirm(self):
+        return self.orchestrator.handle_panic_exit()
+
     def handle_signals(self, command_text: str = "/signals daily"):
         parts = command_text.split()
         pipeline = parts[1] if len(parts) > 1 else "daily"
-        report = self.orchestrator.generate_signal_report(pipeline)
-        return report
+        return self.orchestrator.generate_signal_report(pipeline)
 
     def handle_portfolio_detailed(self, command_text: str = "/portfolio daily"):
         parts = command_text.split()
         pipeline = parts[1] if len(parts) > 1 else "daily"
-        # We prefer Orchestrator's persona report if available
-        # But here we use standard reporter as fallback
         days = 1 if pipeline == "daily" else (7 if pipeline == "weekly" else 30)
         return self.reporter.generate_report(days, pipeline.capitalize())
 
@@ -129,79 +130,45 @@ class TelegramBot:
         return f"❌ Ayang bingung, `{sub}` itu laporan apa ya sayang?"
 
     def dispatch(self, text: str) -> str:
-        """ Dispatches command to handler or orchestrator. """
         if not text: return ""
         cmd_parts = text.split()
         cmd = cmd_parts[0].lower()
-        
         handler = self.commands.get(cmd)
-        if not handler:
-            return "❌ Ayang bingung sayang, perintah itu apa ya?"
-            
+        if not handler: return ""
         try:
-            # Check if handler needs arguments
             import inspect
             sig = inspect.signature(handler)
-            if len(sig.parameters) > 0:
-                result = handler(text)
-            else:
-                result = handler()
+            result = handler(text) if len(sig.parameters) > 0 else handler()
             return result if result else ""
         except Exception as e:
             self.logger.error(f"Telegram: Dispatch error for {cmd}", error=str(e))
-            return "💔 Duh sayang, Ayang lagi pusing nih (Error processing command)."
+            return "💔 Duh sayang, Ayang lagi pusing nih."
 
     def poll(self):
-        """ Resilient polling loop with backoff and error limits. """
         if not self.tel_config.get("enabled"): return
-        
         self.logger.info(f"Telegram: Bot started polling (Offset: {self.offset})")
-        error_count = 0
-        max_errors = 5
-        
         while True:
             try:
                 url = f"{self.api_url}/getUpdates"
                 params = {"offset": self.offset, "timeout": 30}
                 res = requests.get(url, params=params, timeout=35).json()
-                
                 if res.get("ok"):
-                    error_count = 0 # Reset on success
                     for update in res.get("result", []):
                         self.offset = update["update_id"] + 1
                         self._save_offset(self.offset)
-                        
                         msg = update.get("message", {})
                         cb = update.get("callback_query", {})
-                        
                         inc_chat_id = msg.get("chat", {}).get("id") or cb.get("message", {}).get("chat", {}).get("id")
                         text = msg.get("text", "") or cb.get("data", "")
-                        
-                        if cb: # Answer callback
-                            requests.post(f"{self.api_url}/answerCallbackQuery", json={"callback_query_id": cb["id"]})
-                        
+                        if cb: requests.post(f"{self.api_url}/answerCallbackQuery", json={"callback_query_id": cb["id"]})
                         if not text: continue
-                        
                         response = self.dispatch(text)
-                        if response:
-                            self.send_message(response, target_chat_id=inc_chat_id)
-                else:
-                    raise Exception(res.get("description", "Unknown Telegram Error"))
-                
+                        if response: self.send_message(response, target_chat_id=inc_chat_id)
+                else: time.sleep(10)
             except KeyboardInterrupt: break
-            except Exception as e:
-                error_count += 1
-                self.logger.error(f"Telegram: Polling error ({error_count}/{max_errors})", silent_alert=True, error=str(e))
-                
-                if error_count >= max_errors:
-                    self.logger.critical("Telegram: Too many polling failures. Cooling down for 5 mins.", silent_alert=True)
-                    time.sleep(300)
-                    error_count = 0
-                else:
-                    time.sleep(10) # Backoff
+            except: time.sleep(10)
 
     def run_command(self, cmd_text: str) -> str:
-        """ Single command runner for CLI hooks (WhatsApp bridge). """
         return self.dispatch(cmd_text)
 
 if __name__ == "__main__":

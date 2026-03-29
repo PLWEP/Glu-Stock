@@ -13,6 +13,7 @@ from utils.config import ConfigLoader
 class PipelineOrchestrator:
     """
     Orchestrates the multi-agent trading lifecycle.
+    Includes Hardware-Aware Throttling and Panic Exit controls.
     """
 
     def __init__(self, initial_cash: float = None):
@@ -31,9 +32,17 @@ class PipelineOrchestrator:
         self.history = HistoryManager()
 
     def run_full_pipeline(self, pipeline: str = "daily"):
-        """ Runs the full scan and trade loop. """
-        self.logger.info(f"Orchestrator: Starting {pipeline.upper()} pipeline...")
+        """ Runs the full scan and trade loop with Hardware Throttling check. """
         
+        # 1. Hardware Safety Check (Throttling)
+        is_safe, reason = self.sys_monitor.is_safe_to_run()
+        if not is_safe:
+            msg = f"⚠️ *OTOT BOT AYANG LAGI LEMAS*\nScan ditunda sayang... {reason}. Biarin bot istirahat sebentar ya! 🍵"
+            self.logger.warning(f"Orchestrator: Throttling engaged. Reason: {reason}")
+            broadcast_alert(msg)
+            return
+
+        self.logger.info(f"Orchestrator: Starting {pipeline.upper()} pipeline...")
         start_time = time.time()
         end_date = datetime.now().strftime('%Y-%m-%d')
         start_date = (datetime.now() - timedelta(days=60 if pipeline=="daily" else 365)).strftime('%Y-%m-%d')
@@ -74,11 +83,38 @@ class PipelineOrchestrator:
             summary = self.generate_signal_report(pipeline)
             broadcast_alert(summary)
 
+    def handle_panic_exit(self) -> str:
+        """ 🔌 PANIC EXIT: Liquidates all positions immediately. """
+        self.logger.critical("Orchestrator: PANIC EXIT TRIGGERED! Liquidating all positions...")
+        
+        results = []
+        for name, portfolio in self.trading_agent.portfolios.items():
+            tickers_to_sell = list(portfolio.positions.keys())
+            for ticker in tickers_to_sell:
+                try:
+                    # In this simulation, we assume current price is the last known cost or we'd fetch it
+                    # For safety, let's just clear the position in this context
+                    shares = portfolio.positions[ticker]["shares"]
+                    portfolio.update_position(ticker, shares, 0, "SELL")
+                    results.append(f"• {ticker} ({name.upper()}) Sold")
+                except:
+                    results.append(f"• {ticker} ({name.upper()}) Error")
+            
+            portfolio.save_state()
+
+        if not results:
+            return "🌸 *Panic Exit*: Portofolio sudah kosong sayang. Gak ada yang perlu dijual."
+            
+        msg = "🚨 *PANIC EXIT EXECUTED!*\n"
+        msg += "Semua posisi sudah dicairkan demi keamanan modal:\n"
+        msg += "\n".join(results)
+        msg += "\n\n_Bot standby dalam mode aman._ 🛡️"
+        return msg
+
     def generate_signal_report(self, pipeline: str) -> str:
         signals = self.persistence.load_signals(pipeline)
         if not signals: return f"🌸 *Ayang Glu-Stock ({pipeline.upper()})*\n_Belum ada sinyal yang muncul nih sayang..._"
         
-        # Brain Status Info
         brain_info = self.strategy_agent.ml_predictor.get_info()
         brain_status = f"✅ `Brain: {brain_info['accuracy']:.0%}`" if brain_info['status']=="Online" else "⚠️ `Brain: Offline`"
         
