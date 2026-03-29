@@ -20,20 +20,31 @@ strategies:
     sl_pct: 0.015
     duration: "1 Day"
     allocation_pct: 0.40
+    min_ml_confidence: 0.60
   weekly:
     tp1_pct: 0.03
     tp2_pct: 0.05
     sl_pct: 0.03
     duration: "1 Week"
     allocation_pct: 0.30
+    min_ml_confidence: 0.65
   monthly:
     tp1_pct: 0.10
     tp2_pct: 0.20
     sl_pct: 0.07
     duration: "1-3 Months"
     allocation_pct: 0.30
+    min_ml_confidence: 0.70
+
+# --- INTELLIGENCE LAYER ---
+intelligence:
+  enabled: true
+  min_roe: 0.15 # 15%
+  max_pe: 20.0
+  max_der: 1.5
+  min_div_yield: 0.01
 
 # --- PERFORMANCE LIMITS ---
 risk:
   max_drawdown_limit: 0.15
-  profit_freeze: true  # Prevents reinvesting profits above initial capital
+  profit_freeze: true
