@@ -1,12 +1,14 @@
-from utils.alerts import send_telegram_alert
 import sqlite3
 import os
 import json
+import logging
+from logging.handlers import RotatingFileHandler
 from datetime import datetime
+from utils.alerts import broadcast_alert
 
 class JsonLogger:
     """
-    Structured logger that writes to console, JSON file, and SQLite database.
+    Structured logger that writes to console, Rotating JSON file, and SQLite database.
     Supports DEBUG, INFO, WARNING, ERROR, CRITICAL levels.
     """
 
@@ -14,6 +16,17 @@ class JsonLogger:
         self.log_file = log_file
         self.db_file = db_file
         os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
+        
+        # Guard to prevent infinite alert recursion during network/API failures
+        self._is_alerting = False
+        
+        # Setup Rotating File Handler (Standard logging for file)
+        self.file_logger = logging.getLogger(log_file)
+        self.file_logger.setLevel(logging.DEBUG)
+        if not self.file_logger.handlers:
+            handler = RotatingFileHandler(self.log_file, maxBytes=5*1024*1024, backupCount=3)
+            self.file_logger.addHandler(handler)
+            
         self._initialize_db()
 
     def _initialize_db(self):
@@ -32,7 +45,7 @@ class JsonLogger:
         conn.commit()
         conn.close()
 
-    def _log(self, level: str, message: str, **kwargs):
+    def _log(self, level: str, message: str, silent_alert: bool = False, **kwargs):
         """ Internal method to format and write the log entry. """
         now = datetime.now()
         timestamp = now.isoformat()
@@ -49,9 +62,8 @@ class JsonLogger:
         # 1. Print to console
         print(f"[{level}] {message} {json.dumps(kwargs) if kwargs else ''}")
         
-        # 2. Append to JSON file
-        with open(self.log_file, "a", encoding="utf-8") as f:
-            f.write(json_log + "\n")
+        # 2. Log to File (Rotating)
+        self.file_logger.info(json_log)
             
         # 3. Log to SQLite
         try:
@@ -64,7 +76,22 @@ class JsonLogger:
             conn.commit()
             conn.close()
         except Exception as e:
+            # Fallback console print if DB fails
             print(f"FAILED TO LOG TO DB: {e}")
+
+        # 4. Proactive Alerting (Conditional)
+        if level in ["ERROR", "CRITICAL"] and not silent_alert and not self._is_alerting:
+            self._is_alerting = True
+            try:
+                alert_prefix = "⚠️ *Error*" if level == "ERROR" else "‼️ *Critical*"
+                alert_msg = f"{alert_prefix}: {message}"
+                if kwargs:
+                    alert_msg += f"\n*Detail:* `{json.dumps(kwargs)}`"
+                broadcast_alert(alert_msg)
+            except:
+                pass # Prevent loop if alerting fails
+            finally:
+                self._is_alerting = False
 
     def debug(self, message: str, **kwargs):
         self._log("DEBUG", message, **kwargs)
@@ -75,24 +102,14 @@ class JsonLogger:
     def warning(self, message: str, **kwargs):
         self._log("WARNING", message, **kwargs)
 
-    def error(self, message: str, **kwargs):
-        """ Log an error and send a Telegram alert. """
-        self._log("ERROR", message, **kwargs)
-        alert_msg = f"⚠️ *Sayang, ada masalah sedikit nih...*\n*Apa:* {message}"
-        if kwargs:
-            alert_msg += f"\n*Detail:* `{json.dumps(kwargs)}`"
-        send_telegram_alert(alert_msg)
+    def error(self, message: str, silent_alert: bool = False, **kwargs):
+        self._log("ERROR", message, silent_alert=silent_alert, **kwargs)
 
-    def critical(self, message: str, **kwargs):
-        """ Log a critical failure and send a Telegram alert. """
-        self._log("CRITICAL", message, **kwargs)
-        alert_msg = f"‼️ *Sayang! Ayang butuh bantuan, ada masalah serius!*\n*Error:* {message}"
-        if kwargs:
-            alert_msg += f"\n*Info:* `{json.dumps(kwargs)}`"
-        send_telegram_alert(alert_msg)
+    def critical(self, message: str, silent_alert: bool = False, **kwargs):
+        self._log("CRITICAL", message, silent_alert=silent_alert, **kwargs)
 
     def query_logs(self, level: str = None, limit: int = 10):
-        """ Static-like method to query logs from the DB. """
+        """ Queries logs from the DB. """
         conn = sqlite3.connect(self.db_file)
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
@@ -112,9 +129,3 @@ class JsonLogger:
         res = [dict(row) for row in rows]
         conn.close()
         return res
-
-if __name__ == "__main__":
-    logger = JsonLogger(log_file="logs/test.log", db_file="logs/test_logs.db")
-    logger.info("Test Info")
-    logger.error("Test Error", reason="Simulated")
-    print(logger.query_logs(level="INFO"))

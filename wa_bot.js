@@ -2,13 +2,10 @@ const {
     default: makeWASocket,
     useMultiFileAuthState,
     DisconnectReason,
-    fetchLatestBaileysVersion,
-    makeCacheableSignalKeyStore
+    fetchLatestBaileysVersion
 } = require("@whiskeysockets/baileys");
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 const qrcode = require("qrcode-terminal");
-const fs = require("fs");
-const path = require("path");
 require("dotenv").config();
 
 // Configuration
@@ -22,7 +19,7 @@ async function connectToWhatsApp(isCLI = false) {
     const sock = makeWASocket({
         version,
         auth: state,
-        printQRInTerminal: !isCLI, // Only show QR if we're in long-polling mode
+        printQRInTerminal: !isCLI,
         markOnlineOnConnect: true,
     });
 
@@ -52,6 +49,28 @@ async function connectToWhatsApp(isCLI = false) {
     });
 }
 
+function runPythonCommand(commandText) {
+    return new Promise((resolve) => {
+        // Securely execution using spawn instead of exec
+        const child = spawn(PYTHON_PATH, ["telegram_bot.py", "--cmd", commandText]);
+        
+        let stdout = "";
+        let stderr = "";
+
+        child.stdout.on("data", (data) => { stdout += data; });
+        child.stderr.on("data", (data) => { stderr += data; });
+
+        child.on("close", (code) => {
+            if (code !== 0 || stderr) {
+                console.error(`WhatsApp: Python error (code ${code}): ${stderr}`);
+                resolve("💔 Duh sayang, Ayang lagi pusing nih (Error executing command). Coba lagi nanti ya?");
+            } else {
+                resolve(stdout.trim() || "🌸 Ayang sudah kerjakan, tapi nggak ada laporannya nih...");
+            }
+        });
+    });
+}
+
 async function startPolling() {
     const sock = await connectToWhatsApp(false);
 
@@ -73,49 +92,36 @@ async function startPolling() {
         }
 
         console.log(`WhatsApp: Received [ ${body} ] from ${senderNumber}`);
-
-        const pythonCmd = `${PYTHON_PATH} telegram_bot.py --cmd "${body}"`;
-        exec(pythonCmd, (error, stdout, stderr) => {
-            let response = stdout.trim();
-            if (error || stderr) {
-                console.error(`WhatsApp: Python execution error: ${stderr || error.message}`);
-                response = "💔 Duh sayang, Ayang lagi pusing nih (Error executing command). Coba lagi nanti ya?";
-            }
-            if (!response) response = "🌸 Ayang sudah kerjakan, tapi nggak ada laporannya nih...";
-            
-            sock.sendMessage(sender, { text: response });
-        });
+        const response = await runPythonCommand(body);
+        await sock.sendMessage(sender, { text: response });
     });
 }
 
 async function sendNotification(message) {
-    console.log(`WhatsApp: Attempting to send broadcast: "${message.substring(0, 20)}..."`);
+    console.log(`WhatsApp: Broadcasting notification...`);
     try {
         const sock = await connectToWhatsApp(true);
         for (const num of AUTHORIZED_NUMBERS) {
             const jid = `${num}@s.whatsapp.net`;
             await sock.sendMessage(jid, { text: message });
-            console.log(`WhatsApp: Notification sent to ${num}`);
+            console.log(`WhatsApp: Sent to ${num}`);
+            // Small delay for rate-limiting protection
+            await new Promise(r => setTimeout(r, 1000));
         }
-        // Small delay to ensure message is sent before closing
-        await new Promise(r => setTimeout(r, 2000));
+        await new Promise(r => setTimeout(r, 1000));
         process.exit(0);
     } catch (err) {
-        console.error("WhatsApp: Failed to send notification:", err);
+        console.error("WhatsApp: Broadcast failed:", err);
         process.exit(1);
     }
 }
 
-// Main Execution
+// Main
 const args = process.argv.slice(2);
 if (args.includes("--send")) {
     const msgIdx = args.indexOf("--send") + 1;
-    if (args[msgIdx]) {
-        sendNotification(args[msgIdx]);
-    } else {
-        console.error("WhatsApp: No message provided for --send");
-        process.exit(1);
-    }
+    if (args[msgIdx]) sendNotification(args[msgIdx]);
+    else process.exit(1);
 } else {
-    startPolling().catch(err => console.error("WhatsApp: Bot crashed:", err));
+    startPolling().catch(err => console.error("WhatsApp Bot crashed:", err));
 }
