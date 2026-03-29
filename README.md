@@ -1,10 +1,15 @@
 # Glu-Stock 💹
 
-Quantitative Finance Framework for Stock Analysis, optimized for IDX (Indonesia Stock Exchange). Features a multi-agent engine with Telegram and WhatsApp bot integration.
+Quantitative Finance Framework for Stock Analysis, optimized for IDX (Indonesia Stock Exchange). Features a multi-agent engine with Intelligence Layer (Fundamentals + ML), and dual-platform bot integration (Telegram & WhatsApp).
+
+## 🧠 Intelligence Layer (Phase 3)
+
+Glu-Stock now features an advanced intelligence layer to filter "junk" stocks and predict confidence:
+- **Fundamental Analyst**: Automatically scores stocks based on **P/E, ROE, DER, and Dividend Yield**.
+- **ML Price Predictor**: Uses a **Random Forest** classification model to predict price increase probability. 
+- **Decoupled Architecture**: Training is performed on a PC/Laptop (heavy lifting) while Termux handles lean, fast inference.
 
 ## 📱 Termux Quick Start (Recommended)
-
-To set up the platform on Termux (Android):
 
 1. **Install Termux API App**:
    - Install **Termux:API** from [F-Droid](https://f-droid.org/en/packages/com.termux.api/).
@@ -12,8 +17,6 @@ To set up the platform on Termux (Android):
 
 2. **Run Automated Setup**:
    ```bash
-   git clone https://github.com/your-repo/Glu-Stock.git
-   cd Glu-Stock
    chmod +x termux_setup.sh
    ./termux_setup.sh
    ```
@@ -23,45 +26,45 @@ To set up the platform on Termux (Android):
    pm2 start wa_bot.js
    pm2 logs glu-stock-wa
    # Scan the QR code with your phone. 
-   # Stop with Ctrl+C (PM2 keeps it running in background).
    ```
 
-4. **Activate & Run All**:
+4. **Activate All**:
    ```bash
    pm2 start ecosystem.config.js
    pm2 save
    ```
 
-## ⚙️ Configuration (.env)
+## 💻 Decoupled ML Training (PC Trainer)
 
-Update your `.env` file with the following:
-- `TELEGRAM_BOT_TOKEN`: From @BotFather.
-- `TELEGRAM_CHAT_ID`: Your Personal ID.
-- `WHATSAPP_AUTHORIZED_NUMBERS`: Your WA number (comma separated, e.g., `628123456789`).
-- `PYTHON_PATH`: `./glustock_venv/bin/python` (Default for Termux).
+Training on Termux is restricted. Perform training on your PC/Laptop and export the brain:
+
+1. **Train Model (on PC)**:
+   ```bash
+   python utils/ml_trainer_pc.py
+   ```
+2. **Transfer Brain**:
+   Copy `data/models/glu_brain_v1.joblib` from PC to `~/Glu-Stock/data/models/` on Termux.
+
+## ⚙️ Configuration (config.yaml)
+
+Key parameters are centralized in `config.yaml`:
+- **Initial Cash**: Rp 100M default.
+- **Risk**: TP/SL levels, Max Drawdown, and Profit Freeze.
+- **Intelligence**: Thresholds for ROE, P/E, and ML Confidence.
 
 ## 🤖 Bot Commands
 
-The system features an interactive "Ayang" persona for the chatbot interface:
 - `/start`: Open Main Menu.
-- `/status`: System health report (RAM/Battery/Temp).
+- `/status`: System health (RAM/Bat/Temp) + **Intel Status**.
 - `/portfolio`: Performance summary (Daily/Weekly/Monthly).
-- `/signals`: Latest trading recommendations.
-- `/logs`: View system internal logs.
-- `/history`: Audit trail of strategy executions.
+- `/signals`: Latest recommendations with **Intel Badges (`🧠`, `🤖`)**.
+- `/logs`: View rotating system logs.
 
 ## 🛠️ Tech Stack
-- **Python 3.13**: Multi-agent trading engine.
+- **Python 3.13**: Quant engine, Scikit-Learn, joblib, yfinance.
 - **Node.js 22+**: Baileys (WhatsApp) bridge.
-- **SQLite**: Local state and log management.
-- **PM2**: Process manager for 24/7 autonomous execution.
-
-## 📂 Project Structure
-- `agents/`: Multi-agent orchestration logic.
-- `data/`: Database and caching layer.
-- `orchestrator/`: Command processing and persona management.
-- `utils/`: Telemetry, reporting, and alert utilities.
-- `wa_bot.js`: WhatsApp bridge implementation.
+- **SQLite**: High-performance bulk-caching and log audit trail.
+- **PM2**: Resilient process management.
 
 ---
-*Institutional Grade | Mobile First | Robust Architecture*
+*Institutional Grade | ML Powered | Secure & Robust*
