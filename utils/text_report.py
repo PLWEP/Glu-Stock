@@ -3,11 +3,12 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from data.database import TradingDatabase
 from utils.performance import calculate_performance_metrics
+from utils.monte_carlo import MonteCarloSimulator
 
 class TextReportGenerator:
     """
     Generates clean Markdown reports specifically for Telegram notifications.
-    Supports daily, weekly, and monthly timeframes with risk-adjusted metrics.
+    Supports periodic summaries with Statistical Pulse metrics.
     """
     
     def __init__(self):
@@ -15,7 +16,7 @@ class TextReportGenerator:
 
     def generate_report(self, days: int, interval_name: str, candidates: List[Dict[str, Any]] = None) -> str:
         """
-        Generic generator for periodic reports with risk-adjusted scores.
+        Generic generator for periodic reports with Statistical Pulse.
         """
         now = datetime.now()
         start_period = now - timedelta(days=days)
@@ -65,9 +66,17 @@ class TextReportGenerator:
             msg += f"🎯 Win Rate: {metrics['win_rate']*100:.1f}%\n"
             msg += f"📉 Penurunan (DD): {metrics['max_drawdown']*100:.1f}%\n"
             
-            # 6. Risk Score Section (Sharpe, Sortino, Calmar)
+            # 6. Statistical Pulse (Expectancy & Confidence)
             msg += f"📊 *Risk Score*: `S:{metrics['sharpe_ratio']:.2f}` | `T:{metrics['sortino_ratio']:.2f}` | `C:{metrics['calmar_ratio']:.2f}`\n"
+            msg += f"🧠 *Stats Pulse*: 💰 `Ex: {metrics['expectancy']:+,.0f}` | ⚡ `Conf: {metrics['confidence']}`\n"
             
+            # 7. Stress Test (Monte Carlo) - Only if enough data
+            if len(period_trades) >= 10:
+                mc = MonteCarloSimulator(period_trades, num_simulations=500)
+                mc_res = mc.run_simulation(initial_equity=latest_equity)
+                if "error" not in mc_res:
+                    msg += f"🛡️ *Stress Test*: Prob. Bangkrut: `{mc_res['risk_of_ruin_pct']:.1f}%`\n"
+
             msg += f"\n✅ *Transaksi Kita ({len(period_trades)})*:\n"
             limit = 5 if days <= 1 else 10
             for t in period_trades[:limit]:
@@ -78,7 +87,7 @@ class TextReportGenerator:
             if len(period_trades) > limit:
                 msg += f"_...dan {len(period_trades)-limit} lainnya ya sayang_"
 
-            msg += "\n\n_Tetap jaga manajemen risiko ya sayang!_ 💖"
+            msg += "\n\n_Bot tetap waspada buat jagain tabungan kita!_ 💖"
             return msg
 
         except Exception as e:
