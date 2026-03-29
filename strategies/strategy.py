@@ -2,10 +2,12 @@ import pandas as pd
 import numpy as np
 from typing import Optional, List
 from utils.config import ConfigLoader
+from utils.math_core import MathCore
 
 class TradingStrategy:
     """
     Generates trading signals based on technical indicators and optional ML models.
+    Now includes Institutional Trend Filtering (Vol-Normalized EMA).
     """
 
     def generate_signals(self, df: pd.DataFrame, model: Optional[object] = None, features: Optional[List[str]] = None, timeframe: str = "daily") -> pd.DataFrame:
@@ -15,22 +17,32 @@ class TradingStrategy:
         if df.empty:
             return df
         
-        # 1. Compute individual factor scores (0-1)
+        # 1. Institutional Trend Conviction (The Grebenkov Layer)
+        # Use appropriate scale for each timeframe
+        scale = 112 if timeframe == "monthly" else (20 if timeframe == "weekly" else 10)
+        norm_ret = MathCore.calculate_volatility_normalized_return(df['close'])
+        df['inst_trend_conviction'] = MathCore.calculate_trend_signal(norm_ret, span=scale)
+        
+        # 2. Compute individual factor scores (0-1)
         df = self._compute_factor_scores(df)
         
-        # 2. Combine into composite score using timeframe-aware weights
+        # 3. Combine into composite score using timeframe-aware weights
         # Daily: Short-term (RSI/MACD) | Yearly: Long-term (Trend)
         if timeframe == "daily":
-            weights = {'rsi': 0.3, 'macd': 0.3, 'trend': 0.2, 'vol': 0.2}
+            # Daily uses weighted average of indicators + Inst Trend
+            weights = {'rsi': 0.2, 'macd': 0.2, 'trend': 0.2, 'vol': 0.2, 'inst': 0.2}
+            inst_score = (df['inst_trend_conviction'] + 1) / 2 # Scale [-1,1] to [0,1]
         else:
-            # Yearly/Weekly: Focus on Trend and Volume
-            weights = {'rsi': 0.1, 'macd': 0.1, 'trend': 0.6, 'vol': 0.2}
+            # Monthly/Weekly: Focus heavily on Institutional Trend
+            weights = {'rsi': 0.05, 'macd': 0.05, 'trend': 0.1, 'vol': 0.1, 'inst': 0.7}
+            inst_score = (df['inst_trend_conviction'] + 1) / 2
 
         df['final_score'] = (
             weights['rsi'] * df['s_rsi'] + 
             weights['macd'] * df['s_macd'] + 
             weights['trend'] * df['s_trend'] + 
-            weights['vol'] * df['s_vol']
+            weights['vol'] * df['s_vol'] +
+            weights['inst'] * inst_score
         )
         df['timeframe'] = timeframe
         

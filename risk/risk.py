@@ -2,6 +2,7 @@ import math
 import pandas as pd
 import numpy as np
 from typing import Dict, List, Optional
+from utils.math_core import MathCore
 
 class RiskManager:
     """
@@ -27,10 +28,11 @@ class RiskManager:
         final_risk = min(k_pct * fraction, 0.20)
         return math.floor((equity * final_risk) / price)
 
-    def calculate_markowitz_weights(self, price_data_dict: Dict[str, pd.DataFrame], 
-                                     window: int = 30, shrinkage: float = 0.1) -> Dict[str, float]:
+    def calculate_arp_weights(self, price_data_dict: Dict[str, pd.DataFrame], 
+                               window: int = 30) -> Dict[str, float]:
         """
-        Advanced Markowitz: Uses Rolling Covariance and Ledoit-Wolf-style Shrinkage.
+        Implementation of Agnostic Risk Parity (ARP) using MathCore.
+        Weights proportional to Sigma^-1/2 * 1.
         """
         if not price_data_dict: return {}
         
@@ -40,23 +42,18 @@ class RiskManager:
             if len(df) >= window: all_prices[t] = df['close']
         
         if len(all_prices) < 2:
-            return {t: 1.0/len(price_data_dict) for t in price_data_dict.keys()}
+            return {t: 1.0/len(all_prices) for t in all_prices.keys()} if all_prices else {}
             
         price_df = pd.DataFrame(all_prices).tail(window)
         returns = price_df.pct_change().dropna()
         
-        # 2. Compute Covariance with Shrinkage
-        # Cov = (1-s)*SampleCov + s*Identity
-        sample_cov = returns.cov().values
-        n = sample_cov.shape[0]
-        shrink_matrix = (1 - shrinkage) * sample_cov + shrinkage * np.eye(n) * np.mean(np.diag(sample_cov))
+        # 2. Correlation Matrix
+        corr_matrix = returns.corr()
         
-        # 3. Inverse-Variance Weighting (Simplified for Stability)
-        # Weights normalized proportion to 1/Var
-        inv_vars = 1.0 / np.diag(shrink_matrix)
-        weights = inv_vars / np.sum(inv_vars)
+        # 3. Calculate ARP weights via MathCore
+        weights_series = MathCore.calculate_arp_weights(corr_matrix)
         
-        return dict(zip(price_df.columns, weights))
+        return weights_series.to_dict()
 
     def get_atr_trailing_stop(self, current_price: float, atr: float, multiplier: float = 3.0, prev_stop: float = 0) -> float:
         stop_level = current_price - (atr * multiplier)

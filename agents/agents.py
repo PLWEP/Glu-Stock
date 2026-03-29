@@ -110,7 +110,9 @@ class UniverseSelectionAgent:
         elif pipeline == "weekly": candidates = self.universe_manager.filter_weekly(tickers, price_data_dict)
         else: candidates = tickers
 
-        top_tickers, _ = self.universe_manager.rank_stocks(global_pool[global_pool["ticker"].isin(candidates)], price_data_dict, top_n=max_stocks)
+        # For Daily Basket Trading, we increase max_stocks proportionally
+        actual_max = max_stocks * 3 if pipeline == "daily" else max_stocks
+        top_tickers, _ = self.universe_manager.rank_stocks(global_pool[global_pool["ticker"].isin(candidates)], price_data_dict, top_n=actual_max)
         return top_tickers
 
 class TradingAgent:
@@ -131,56 +133,39 @@ class TradingAgent:
             if not p.load_state(): p.save_state()
             self.portfolios[name] = p
 
-    def trade(self, df: pd.DataFrame, pipeline: str = "daily"):
+    def rebalance(self, target_exposures: Dict[str, float], price_data_dict: Dict[str, pd.DataFrame], pipeline: str = "daily"):
+        """
+        Institutional Rebalancing: Applies ARP and conviction-based sizing.
+        target_exposures: Dict {ticker: conviction_level [-1, 1]}
+        """
         portfolio = self.portfolios.get(pipeline.lower())
-        if not portfolio or df.empty: return
+        if not portfolio or not target_exposures: return
 
-        ticker = df.index.get_level_values('ticker')[0] if isinstance(df.index, pd.MultiIndex) else "UNKNOWN"
-        last_row = df.iloc[-1]
-        action = last_row.get('recommendation', 'HOLD')
+        # 1. Calculate ARP Weights for the active basket
+        arp_weights = self.risk_manager.calculate_arp_weights(price_data_dict)
         
-        # 1. Trailing Stop Exit Check (Safety First)
-        if ticker in portfolio.positions:
-            if last_row['close'] < last_row.get('atr_stop', 0):
+        # 2. Iterate and Adjust Positions
+        for ticker, conviction in target_exposures.items():
+            last_price = price_data_dict[ticker]['close'].iloc[-1]
+            arp_weight = arp_weights.get(ticker, 0)
+            
+            # Target IDR = Total Equity * ARP_Weight * Conviction_Strength
+            # (Conviction determines how much of the allocated risk weight to use)
+            target_value = portfolio.total_equity * arp_weight * abs(conviction)
+            current_value = portfolio.positions.get(ticker, {}).get("shares", 0) * last_price
+            
+            diff_value = target_value - current_value
+            action = "BUY" if diff_value > 0 else "SELL"
+            
+            # Conviction direction matters
+            if conviction < 0 and current_value > 0:
                 action = "SELL"
+                diff_value = -current_value # Exit current bullish position
+                
+            shares_diff = abs(int(diff_value / last_price))
+            if shares_diff <= 0: continue
 
-        if action == "HOLD": return
-
-        if action == "BUY":
-            # 2. ADVANCED POSITION SIZING
-            risk_cfg = self.config.get("risk", {})
-            mode = risk_cfg.get("position_sizing_mode", "FIXED").upper()
-            risk_pct = risk_cfg.get("risk_per_trade_pct", 0.01)
-            
-            # Re-sync RiskManager with local config
-            self.risk_manager.risk_per_trade = risk_pct
-            
-            if mode == "VOLATILITY":
-                shares = self.risk_manager.calculate_volatility_adjusted_size(
-                    portfolio.total_equity, last_row['close'], 
-                    last_row.get('atr', 0), multiplier=risk_cfg.get('atr_multiplier', 2.0)
-                )
-            elif mode == "KELLY":
-                stats = self.db.get_performance_stats()
-                shares = self.risk_manager.calculate_kelly_size(
-                    portfolio.total_equity, last_row['close'],
-                    stats['win_rate'], stats['win_loss_ratio'], 
-                    fraction=risk_cfg.get('kelly_fraction', 0.5)
-                )
-            else: # FIXED FRACTIONAL
-                shares = self.risk_manager.calculate_fixed_fractional_size(
-                    portfolio.total_equity, last_row['close'], 
-                    self.config['strategies'][pipeline.lower()]['sl_pct']
-                )
-
-            # Safeguard: Never trade more than available cash
-            max_shares = int(portfolio.available_to_trade / last_row['close'])
-            shares = min(shares, max_shares)
-        else:
-            shares = portfolio.positions.get(ticker, {}).get("shares", 0)
-
-        if shares <= 0: return
-
-        if self.execution_engine.execute(ticker, action, shares, last_row['close']):
-            portfolio.update_position(ticker, shares, last_row['close'], action)
-            portfolio.save_state()
+            if self.execution_engine.execute(ticker, action, shares_diff, last_price):
+                portfolio.update_position(ticker, shares_diff, last_price, action)
+        
+        portfolio.save_state()

@@ -76,6 +76,9 @@ class PipelineOrchestrator:
         tickers = self.universe_agent.select_universe(max_stocks, start_date, end_date, pipeline=pipeline)
         
         all_signals = []
+        target_exposures = {}
+        price_data_dict = {}
+
         for ticker in tickers:
             try:
                 df = self.research_agent.research([ticker], start_date, end_date, interval="15m" if pipeline=="daily" else "1d")
@@ -83,22 +86,31 @@ class PipelineOrchestrator:
                 
                 if not recommendations.empty:
                     last_row = recommendations.iloc[-1]
+                    # Institutional Conviction is encoded in inst_trend_conviction (-1.0 to 1.0)
+                    conviction = last_row.get('inst_trend_conviction', 0)
+                    target_exposures[ticker] = conviction
+                    price_data_dict[ticker] = df
+
                     signal_data = {
                         "ticker": ticker,
                         "timestamp": str(last_row.name),
                         "close": last_row['close'],
                         "signal": last_row['recommendation'],
-                        "ml_conf": last_row.get('ml_confidence', 0.5),
-                        "cnn_conf": last_row.get('cnn_confidence', 0.5),
-                        "ens_conf": last_row.get('ensemble_confidence', 0.5),
+                        "ml_conf": last_row.get('ml_conf', 0.5),
+                        "cnn_conf": last_row.get('cnn_conf', 0.5),
+                        "ens_conf": last_row.get('ens_conf', 0.5),
+                        "conviction": conviction,
                         "tp1": last_row['tp1'],
                         "tp2": last_row['tp2'],
                         "sl": last_row['sl_level'],
                     }
                     all_signals.append(signal_data)
-                    self.trading_agent.trade(recommendations, pipeline=pipeline)
             except Exception as e:
                 self.logger.error(f"Orchestrator: Error [{ticker}]", error=str(e))
+
+        # 5. Institutional Rebalancing (The ARP Layer)
+        if target_exposures:
+            self.trading_agent.rebalance(target_exposures, price_data_dict, pipeline=pipeline)
 
         self.persistence.save_signals(all_signals, pipeline)
         
@@ -126,9 +138,12 @@ class PipelineOrchestrator:
             icon = "🚀" if s['signal'] == "BUY" else "🔻"
             # Badge if Ensemble confidence is high
             intel = "🧠" if s.get('ens_conf', 0) > 0.7 else ""
-            report += f"{icon} *{s['ticker']}* {intel}\n"
-            report += f"Price: `{s['close']:,.0f}` | Ens: `{s.get('ens_conf', 0):.0%}`\n"
-            report += f"CNN: `{s.get('cnn_conf', 0):.0%}` | ML: `{s.get('ml_conf', 0):.0%}`\n"
+            conv = s.get('conviction', 0)
+            conv_icon = "🔥" if abs(conv) > 0.8 else "🔹"
+            
+            report += f"{icon} *{s['ticker']}* {intel} {conv_icon}\n"
+            report += f"Price: `{s['close']:,.0f}` | Conv: `{conv:+.2f}`\n"
+            report += f"Ens: `{s.get('ens_conf', 0):.0%}` | CNN: `{s.get('cnn_conf', 0):.0%}`\n"
             report += f"🎯 TP: `{s['tp1']:,.0f}` | 🧱 SL: `{s['sl']:,.0f}`\n\n"
         return report
 
