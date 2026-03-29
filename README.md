@@ -16,10 +16,8 @@ Glu-Stock now features an advanced intelligence layer to filter "junk" stocks an
    - Grant necessary hardware permissions in Android Settings.
 
 2. **Run Automated Setup**:
-   ```bash
-   chmod +x termux_setup.sh
-   ./termux_setup.sh
-   ```
+   - **Termux**: `./termux_setup.sh`
+   - **Laptop/PC (Windows)**: Run `setup_pc.bat`
 
 3. **WhatsApp Authentication**:
    ```bash
