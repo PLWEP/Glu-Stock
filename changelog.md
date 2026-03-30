@@ -1,18 +1,16 @@
 # Changelog
 
-## [v11.0.0] - 2026-03-29
-### Added
-- **Deep Intelligence (Phase 11)**:
-    - **1D-CNN Brain**: Implemented 10-layer Convolutional Neural Network for temporal pattern recognition.
-    - **Dual-Brain Ensemble**: Integrated CNN + Random Forest voting logic in `StrategyAgent`.
-    - **TFLite Inference**: Optimized `.tflite` interpreter for high-speed CNN execution on Termux.
-- **DevOps & Training**:
-    - `train_intel.py`: Unified script for training both RF and CNN intelligence layers.
-    - `setup_pc.bat`: Comprehensive PC Command Center for environment setup, training, and testing.
+## [v14.0.0] - 2026-03-30
+### Removed
+- **WhatsApp Integration**: Deleted `wa_bot.js` and removed all Baileys bridge logic from `alerts.py` and `orchestrator.py`.
+- **PM2 Consolidation**: Removed `glu-stock-wa` from `ecosystem.config.js`.
 
 ### Changed
-- Refactored `Orchestrator` signal reports to display dual-brain (ML/CNN) confidence scores.
-- Updated `requirements.txt` to include `tensorflow` and `scipy` for deep learning support.
+- **SaaS Guard Disabled**: Temporary suspension of Telegram Channel broadcasting and subscriber auto-kick logic.
+- **Platform Focus**: System consolidated to focus exclusively on Telegram for personal professional use.
+
+## [v11.0.0] - 2026-03-29
+...
 
 ## [v8.0.0] - 2026-03-29
 ...

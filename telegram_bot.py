@@ -9,7 +9,6 @@ from utils.config import ConfigLoader
 from utils.logger import JsonLogger
 from utils.text_report import TextReportGenerator
 from orchestrator.orchestrator import PipelineOrchestrator
-from utils.subscription_manager import SubscriptionManager
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -18,21 +17,17 @@ class TelegramBot:
     """
     Standalone Telegram Bot for real-time engine monitoring.
     Features a structured command dispatcher and resilient polling.
-    Now supports SaaS Admin features (Subscriber whitelisting & auto-kick).
     """
     def __init__(self):
         self.config = ConfigLoader().get_config()
         self.tel_config = self.config.get("telegram", {})
         self.token = os.environ.get("TELEGRAM_BOT_TOKEN")
         self.chat_id = os.environ.get("TELEGRAM_CHAT_ID")
-        self.admin_id = os.environ.get("TELEGRAM_ADMIN_ID", self.chat_id)
-        self.channel_id = os.environ.get("TELEGRAM_CHANNEL_ID")
         
         self.api_url = f"https://api.telegram.org/bot{self.token}"
         self.logger = JsonLogger(log_file="logs/telegram_bot.log")
         self.orchestrator = PipelineOrchestrator()
         self.reporter = TextReportGenerator()
-        self.sub_manager = SubscriptionManager()
         self.offset_file = "logs/bot_offset.txt"
         self.offset = self._load_offset()
         
@@ -48,12 +43,7 @@ class TelegramBot:
             "/report": self.handle_report,
             "/registry": lambda: self.orchestrator.handle_registry_command(),
             "/panic": self.handle_panic,
-            "/panic_confirm": self.handle_panic_confirm,
-            
-            # ADMIN ONLY COMMANDS
-            "/add_user": self.handle_add_user,
-            "/kick_expired": self.handle_kick_expired,
-            "/list_subs": self.handle_list_subs
+            "/panic_confirm": self.handle_panic_confirm
         }
         
         self.set_bot_commands()
@@ -131,41 +121,6 @@ class TelegramBot:
         days = 1 if pipeline == "daily" else (7 if pipeline == "weekly" else 30)
         return self.reporter.generate_report(days, pipeline.capitalize())
 
-    def handle_add_user(self, command_text: str):
-        if str(self.admin_id) not in command_text and "from_admin" not in command_text: # Simple check
-            return "❌ Maaf sayang, cuma Admin yang boleh tambah user."
-        
-        parts = command_text.split()
-        if len(parts) < 3: return "❌ Format: `/add_user [user_id] [hari]`"
-        
-        uid = int(parts[1])
-        days = int(parts[2])
-        return self.sub_manager.add_subscriber(uid, f"User_{uid}", days)
-
-    def handle_list_subs(self):
-        subs = self.sub_manager.list_active_subscribers()
-        if not subs: return "📭 Belum ada subscriber aktif sayang."
-        
-        report = "👥 *Subscriber Aktif:*\n"
-        for s in subs:
-            report += f"• `{s['user_id']}` (@{s['username']}) - {s['expiry_date'][:10]}\n"
-        return report
-
-    def handle_kick_expired(self):
-        if not self.channel_id: return "❌ `TELEGRAM_CHANNEL_ID` belum diset sayang."
-        
-        expired_ids = self.sub_manager.get_expired_subscribers()
-        if not expired_ids: return "✅ Tidak ada subscriber yang kadaluarsa hari ini."
-        
-        kicked_count = 0
-        for uid in expired_ids:
-            url = f"{self.api_url}/banChatMember"
-            res = requests.post(url, json={"chat_id": self.channel_id, "user_id": uid}).json()
-            if res.get("ok"): kicked_count += 1
-            
-        self.sub_manager.deactivate_subscribers(expired_ids)
-        return f"🚪 Berhasil mengeluarkan {kicked_count} user dari channel."
-
     def handle_report(self, command_text: str):
         parts = command_text.split()
         if len(parts) < 2: return "❌ Sayang, gunanya gini ya: `/report [daily|weekly|monthly]`"
@@ -193,15 +148,9 @@ class TelegramBot:
     def poll(self):
         if not self.tel_config.get("enabled"): return
         self.logger.info(f"Telegram: Bot started polling (Offset: {self.offset})")
-        last_cleanup = 0
         while True:
             try:
-                # 1. PERIODIC AUTO-KICK (Every 1 hour)
-                if time.time() - last_cleanup > 3600:
-                    self.handle_kick_expired()
-                    last_cleanup = time.time()
-
-                # 2. Polling for messages
+                # Polling for messages
                 url = f"{self.api_url}/getUpdates"
                 params = {"offset": self.offset, "timeout": 30}
                 res = requests.get(url, params=params, timeout=35).json()

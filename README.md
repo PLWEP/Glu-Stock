@@ -52,7 +52,6 @@ Managing the bot is now easier with the unified Windows Batch menu:
 - `/start`: Open Main Menu.
 - `/status`: System health + Portfolio + **Market Regime (`📈`/`📉`)**.
 - `/signals`: Recommendations with **Ensemble Confidence (`Ens`)**.
-- `/registry`: View top 5 backtest experiments from the Lab.
 - `/panic`: Liquidate all clusters immediately.
 
 ## 🛠️ Tech Stack

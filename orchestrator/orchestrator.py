@@ -116,14 +116,16 @@ class PipelineOrchestrator:
         
         if all_signals:
             report = self.generate_signal_report(pipeline)
-            # BROADCAST TO SUBSCRIBER CHANNEL
-            channel_id = os.environ.get("TELEGRAM_CHANNEL_ID")
-            if channel_id and self.bot:
-                self.bot.send_message(report, target_chat_id=channel_id)
+            # SaaS Broadcasting disabled as per user request
+            # channel_id = os.environ.get("TELEGRAM_CHANNEL_ID")
+            # if channel_id and self.bot:
+            #     self.bot.send_message(report, target_chat_id=channel_id)
             
             # Add Market Context to report
             market_note = "\n📉 *Kondisi Pasar*: Bearish (Risiko dikurangi 50%)" if regime_res['regime'] == "BEAR" else "\n📈 *Kondisi Pasar*: Bullish (Tancap Gas)"
-            broadcast_alert(report + market_note)
+            # broadcast_alert(report + market_note) # Disable all broadcast alerts for now
+            return report
+        return None
 
     def handle_panic_exit(self) -> str:
         results = []

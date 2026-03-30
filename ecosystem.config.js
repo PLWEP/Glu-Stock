@@ -28,15 +28,5 @@ module.exports = {
 				PYTHONUNBUFFERED: "1",
 			},
 		},
-		{
-			name: "glu-stock-wa",
-			script: "wa_bot.js",
-			interpreter: "node",
-			autorestart: true,
-			max_memory_restart: "200M",
-			env: {
-				NODE_ENV: "production",
-			},
-		},
 	],
 };
