@@ -35,12 +35,32 @@ class HistoricalBacktester:
         oos_split: Fraction of data used for In-Sample (IS) training/fitting.
         """
         # 1. Fetch & Engineer Data
-        interval = "15m" if pipeline == "daily" else "1d"
+        interval = "1d" # Default
+        if pipeline == "daily":
+            # Yahoo limits 15m to 60 days. Switch to 1h if range is longer.
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+            days_diff = (end_dt - start_dt).days
+            
+            if days_diff <= 59:
+                interval = "15m"
+            elif days_diff <= 729:
+                interval = "1h"
+                print(f"[INFO] Backtester: Range {days_diff}d > 59d. Switching to 1h interval for {ticker}.")
+            else:
+                interval = "1d"
+                print(f"[WARNING] Backtester: Range {days_diff}d > 720d! Switching to 1d interval for {ticker}.")
+        
         df = self.data_handler.fetch_data([ticker], start_date, end_date, interval=interval)
+        
+        if df.empty: 
+            return {"error": f"No data found for {ticker} ({interval} {start_date} to {end_date})"}
+
         df = self.feature_engineer.add_indicators(df)
         df = self.feature_engineer.clean_features(df)
         
-        if df.empty: return {"error": "No data found"}
+        if df.empty: 
+            return {"error": f"Calculated features resulted in empty dataset for {ticker}. Need more warm-up data?"}
 
         # 2. OOS Split
         split_idx = int(len(df) * oos_split)

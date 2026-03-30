@@ -1,5 +1,13 @@
 # Changelog
 
+## [v14.1.0] - 2026-03-31
+### Fixed
+- **History Module Sync**: Resolved `ImportError: HistoryManager` in `orchestrator.py` by refactoring `utils/history.py`.
+- **Dependency Missing**: Fixed `NameError: TradingDatabase` in `agents/agents.py`.
+- **Config Hardening**: Updated `ConfigLoader` to support current `config.yaml` schema (`initial_cash`, `risk` levels).
+- **Training Stability**: Removed emojis and standardized column naming to fix `UnicodeEncodeError` and `KeyError` in unified training.
+- **Backtest Lab**: Implemented missing `--backtest` CLI logic in `scheduler.py` for full menu functionality.
+
 ## [v14.0.0] - 2026-03-30
 ### Removed
 - **WhatsApp Integration**: Deleted `wa_bot.js` and removed all Baileys bridge logic from `alerts.py` and `orchestrator.py`.

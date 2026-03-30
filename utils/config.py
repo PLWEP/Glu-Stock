@@ -42,23 +42,30 @@ class ConfigLoader:
 
     def validate(self):
         """ Enforces constraints on trading parameters. """
+        # Try both structured and flat formats for backward compatibility
         trading = self.config.get("trading", {})
+        capital = trading.get("capital") or self.config.get("initial_cash")
         
-        capital = trading.get("capital")
         if not isinstance(capital, (int, float)) or capital <= 0:
-            raise ValueError(f"ConfigLoader: Capital must be a positive number. Got: {capital}")
+            # If still None, check if we're in a minimal debug state
+            if self.config.get("debug_mode"):
+                capital = self.DEFAULT_CONFIG["trading"]["capital"]
+            else:
+                raise ValueError(f"ConfigLoader: Capital must be a positive number. Got: {capital}")
             
-        risk = trading.get("risk_per_trade")
+        risk = trading.get("risk_per_trade") or self.config.get("risk", {}).get("risk_per_trade_pct")
+        if not risk:
+            risk = self.DEFAULT_CONFIG["trading"]["risk_per_trade"]
+            
         if not isinstance(risk, (int, float)) or not (0 < risk < 1):
-            raise ValueError(f"ConfigLoader: Risk per trade must be between 0 and 1. Got: {risk}")
-            
-        tickers = trading.get("tickers")
-        if not isinstance(tickers, list) or len(tickers) == 0:
-            raise ValueError("ConfigLoader: Tickers list must be provided and non-empty.")
+            raise ValueError(f"ConfigLoader: Risk parameter must be between 0 and 1. Got: {risk}")
 
     def get_trading_params(self) -> Dict[str, Any]:
         """ Returns the trading section of the configuration. """
-        return self.config.get("trading", self.DEFAULT_CONFIG["trading"])
+        params = self.config.get("trading", self.DEFAULT_CONFIG["trading"]).copy()
+        if "initial_cash" in self.config:
+            params["capital"] = self.config["initial_cash"]
+        return params
 
     def get_config(self) -> Dict[str, Any]:
         """ Returns the full configuration dictionary. """

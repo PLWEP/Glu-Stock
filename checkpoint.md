@@ -4,13 +4,14 @@
 
 Glu-Stock is an institutional-grade, multi-agent quantitative trading engine optimized for the IDX (Indonesia Stock Exchange). It features a 24/7 autonomous lifecycle, ensemble intelligence (RF + CNN), and a math-driven Institutional Core (ARP + Linear Trend).
 
-## 🤖 Platform Consolidation (v14.0)
+## 🤖 Platform Consolidation (v14.1.0)
 
-The system is now focused exclusively on the **Telegram Bot** for personal professional use.
+The system is now fully hardened and focused exclusively on the **Telegram Bot** for personal professional use.
 
+- **Unified Training Fixed**: Resolved all execution errors (Unicode, Missing Features) for the RF and CNN brains.
+- **Backtest Lab Restored**: Menu option [3] in `setup_pc.bat` is now fully operational with the `HistoricalBacktester` correctly integrated.
+- **History Module Sync**: Consistently logs all scan and trade events with comprehensive Telegram Command Support.
 - **Telegram Interface**: All commands, reports, and alerts are delivered directly to the user's private Telegram chat.
-- **SaaS Layers (Disabled)**: Telegram Channel broadcasting and administrative subscriber management are currently suspended/disabled for a lean, private experience.
-- **WhatsApp (Removed)**: All WhatsApp bot functionality and Baileys bridge logic have been purged from the system.
 
 ## 🏛️ Module Logic: Institutional Core (v12.0)
 

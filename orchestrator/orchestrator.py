@@ -166,10 +166,30 @@ class PipelineOrchestrator:
         return msg
 
     def handle_history_command(self, cmd_text: str) -> str:
-        logs = self.history.get_history(limit=5)
-        msg = f"📜 *CATATAN TRADING (5 Terakhir)*\n\n"
+        # 1. Parse filter from command
+        parts = cmd_text.split()
+        filter_val = parts[1].lower() if len(parts) > 1 else None
+        
+        # 2. Get events from Strategic History (Checking both strategy and ticker)
+        if filter_val:
+            # Try as strategy first
+            logs = self.history.query_history(strategy=filter_val, limit=10)
+            # If nothing, try as ticker
+            if not logs:
+                logs = self.history.query_history(ticker=filter_val, limit=10)
+        else:
+            logs = self.history.query_history(limit=5)
+        
+        if not logs: 
+            return f"🌸 Belum ada catatan untuk `{filter_val or 'semua'}` nih sayang."
+        
+        header = f"📜 *CATATAN TRADING ({filter_val.upper() if filter_val else 'TERAKHIR'})*\n\n"
+        msg = header
         for log in logs:
-            msg += f"{'✅' if log['action']=='BUY' else '❌'} *{log['ticker']}* @ `{log['price']:,.0f}`\n"
+            phase = log.get('phase', 'INFO')
+            icon = "🎯" if phase == 'TRADE' else ("🔍" if phase == 'SCAN' else "📊")
+            msg += f"{icon} *{log['ticker']}* | {log['phase']}\n"
+            msg += f"   Status: `{log['status']}` | `{log['details']}`\n"
         return msg
 
     def handle_log_system_command(self, cmd_text: str) -> str:

@@ -2,16 +2,14 @@ import sqlite3
 import os
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+from data.database import TradingDatabase
 
-class StrategicHistoryManager:
-    """
-    Manages structured historical logging using SQLite.
-    Tracks Scans, Audits, Trades, and PnL Outcomes.
-    """
+class HistoryManager:
     def __init__(self, db_path: str = "data/strategic_history.db"):
         self.db_path = db_path
         os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._initialize_db()
+        self.db = TradingDatabase()
 
     def _initialize_db(self):
         """ Creates the history table if it doesn't exist. """
@@ -71,6 +69,10 @@ class StrategicHistoryManager:
         results = [dict(row) for row in rows]
         conn.close()
         return results
+
+    def get_history(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """ Alias for query_history to support orchestrator CLI. """
+        return self.query_history(limit=limit)
 
     def get_daily_summary(self, date_str: Optional[str] = None) -> List[Dict[str, Any]]:
         """ Gets all events for a specific date (YYYY-MM-DD). """

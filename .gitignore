@@ -78,6 +78,7 @@ venv.bak/
 # Institutional Data & State (Local Only)
 data/*.db
 data/*.json
+data/models/
 logs/*.db
 logs/*.log
 execution/*.csv

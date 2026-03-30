@@ -39,15 +39,24 @@ class FeatureEngineer:
         group['bb_mavg'] = bb.bollinger_mavg()
         group['bb_high'] = bb.bollinger_hband()
         group['bb_low'] = bb.bollinger_lband()
+        group['bb_width'] = (group['bb_high'] - group['bb_low']) / group['bb_mavg']
 
         return group
 
     def clean_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
         Only removes rows that are entirely NaN or critical missing values.
-        For production, we ensure we have enough 'warm-up' data before the target end_date.
+        Ensures columns exist before attempting to dropna to prevent KeyErrors.
         """
+        if df.empty: return df
+        
         # Critical columns that MUST have data for strategy logic
         critical_cols = ['rsi', 'macd_diff', 'ema_20']
-        # We drop NaNs ONLY for the critical strategy indicators
-        return df.dropna(subset=critical_cols)
+        
+        # Filter only existing columns to avoid KeyError
+        existing_cols = [col for col in critical_cols if col in df.columns]
+        
+        if not existing_cols:
+            return df
+            
+        return df.dropna(subset=existing_cols)

@@ -8,25 +8,33 @@ class DailyStrategy:
     """
     def generate_signals(self, df: pd.DataFrame) -> pd.DataFrame:
         if df.empty: return df
+        df = df.copy()
         
-        # Ensure dates are datetime for grouping
-        dates = pd.to_datetime(df.index.get_level_values('date'))
+        # 0. Setup Date Helpers
+        if 'date' in df.index.names:
+            dates = pd.to_datetime(df.index.get_level_values('date'))
+        else:
+            dates = pd.to_datetime(df.index)
         df['date_only'] = dates.date
         
         # 1. VWAP Calculation (RESET DAILY)
-        # Standard VWAP = cumulative (price * volume) / cumulative volume (resetting each day)
-        def calc_vwap(group):
-            cum_pv = (group['close'] * group['volume']).cumsum()
-            cum_v = group['volume'].cumsum()
-            group['vwap'] = cum_pv / cum_v
-            return group
-
-        df = df.groupby('date_only', group_keys=False).apply(calc_vwap)
+        # PV = Price * Volume
+        df['pv'] = df['close'] * df['volume']
+        
+        # Use transform to keep the original index and columns
+        group_cols = []
+        if 'ticker' in df.index.names: group_cols.append('ticker')
+        group_cols.append('date_only')
+        
+        cum_pv = df.groupby(group_cols)['pv'].transform('cumsum')
+        cum_v = df.groupby(group_cols)['volume'].transform('cumsum')
+        df['vwap'] = cum_pv / (cum_v + 1e-9)
         
         # 2. Pivot Points (Using previous TRADING DAY)
+        # We MUST group by date_only to get daily OHLC
         daily_ohlc = df.groupby('date_only').agg({
             'high': 'max', 'low': 'min', 'close': 'last'
-        }).shift(1) 
+        }).shift(1)
         
         df['pivot'] = df['date_only'].map(daily_ohlc.apply(lambda r: (r['high'] + r['low'] + r['close'])/3 if not pd.isna(r['high']) else np.nan, axis=1))
         df['r_res'] = df['date_only'].map(daily_ohlc.apply(lambda r: (2 * ((r['high'] + r['low'] + r['close'])/3)) - r['low'] if not pd.isna(r['high']) else np.nan, axis=1))

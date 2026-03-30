@@ -3,7 +3,7 @@ from utils.ml_trainer_pc import PCTrainer
 from utils.cnn_trainer import CNNTrainer
 
 def run_unified_training():
-    print("🚀 GLU-STOCK: Unified Intelligence Training (v11.0)")
+    print("GLU-STOCK: Unified Intelligence Training (v11.0)")
     print("---------------------------------------------------")
     
     # 1. Tickers for training (LQ45 focus)
@@ -14,14 +14,14 @@ def run_unified_training():
     ]
     
     # 2. Random Forest Training (Brain v1)
-    print("\n🧠 [STAGE 1] Training Random Forest (Ensemble Brain v1)...")
+    print("\n[STAGE 1] Training Random Forest (Ensemble Brain v1)...")
     rf_trainer = PCTrainer()
     data = rf_trainer.fetch_training_pool(tickers, years=5)
     X, y = rf_trainer.prepare_labeled_data(data, target_horizon=5)
     rf_trainer.train_and_export(X, y, model_name="glu_brain_v1.joblib")
     
     # 3. CNN Training (Deep Intelligence Brain v2)
-    print("\n🖼️ [STAGE 2] Training CNN (Deep Intelligence Brain v2)...")
+    print("\n[STAGE 2] Training CNN (Deep Intelligence Brain v2)...")
     cnn_trainer = CNNTrainer(window_size=30)
     
     # Horizons

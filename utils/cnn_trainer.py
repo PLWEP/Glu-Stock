@@ -52,15 +52,14 @@ class CNNTrainer:
         """
         Prepares 10-channel 'images' using z-score normalization.
         """
-        # Ensure 10 channels: Open, High, Low, Close, Volume, 
-        # Adj Open, Adj High, Adj Low, Adj Close, Adj Volume
-        # For simulation, we'll use OHLCV and pseudo-adj if missing
-        cols = ['Open', 'High', 'Low', 'Close', 'Volume']
-        if len(df.columns) < 10:
-            # Create dummy adj columns if needed for testing structure
-            for c in cols: df[f'Adj_{c}'] = df[c] * 0.99 
+        # Ensure 10 channels: open, high, low, close, volume, 
+        # adj_open, adj_high, adj_low, adj_close, adj_volume
+        cols = ['open', 'high', 'low', 'close', 'volume']
+        if 'adj_open' not in df.columns:
+            # Create dummy adj columns if missing
+            for c in cols: df[f'adj_{c}'] = df[c] * 0.99 
         
-        feature_cols = cols + [f'Adj_{c}' for c in cols]
+        feature_cols = cols + [f'adj_{c}' for c in cols]
         data = df[feature_cols].values
         
         # Normalization: (x - min) / (max - min)
@@ -70,8 +69,8 @@ class CNNTrainer:
         for i in range(len(data) - self.window_size - target_shift):
             window = data[i : i + self.window_size]
             # Target: 1 if future price > current close else 0
-            future_close = df['Close'].iloc[i + self.window_size + target_shift]
-            current_close = df['Close'].iloc[i + self.window_size - 1]
+            future_close = df['close'].iloc[i + self.window_size + target_shift]
+            current_close = df['close'].iloc[i + self.window_size - 1]
             label = 1 if future_close > current_close else 0
             
             X.append(window)

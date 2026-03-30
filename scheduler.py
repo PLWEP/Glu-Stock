@@ -131,13 +131,38 @@ if __name__ == "__main__":
     parser.add_argument("--scan", type=str, help="Manually run scan for: daily, weekly, monthly")
     parser.add_argument("--report", type=str, help="Manually send signal report for: daily, weekly, monthly")
     parser.add_argument("--portfolio", type=str, help="Manually send portfolio report for: daily, weekly, monthly")
-    parser.add_argument("--loop", action="store_true", help="Start the background scheduler loop")
+    parser.add_argument("--backtest", action="store_true", help="Run the Backtest Lab (Strategy Validation)")
     
     args = parser.parse_args()
     
     ts = TradingScheduler()
     
-    if args.scan:
+    if args.backtest:
+        print("\n[LAB] GLU-STOCK: Backtest Lab (v11.0)")
+        print("---------------------------------")
+        from backtest.engine import HistoricalBacktester
+        tester = HistoricalBacktester()
+        # Default test: LQ45 flagship (BBCA) for 1 year
+        ticker = "BBCA.JK"
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
+        
+        print(f"Running validation for {ticker} (1 Year Range)...")
+        print(f"[INFO] Daily Pipeline: Automatically optimizing interval based on range.")
+        results = tester.run_backtest(ticker, start_date, end_date, pipeline="daily")
+        
+        if "error" in results:
+            print(f"[ERROR] {results['error']}")
+        else:
+            is_metrics = results['is']['metrics']
+            oos_metrics = results['oos']['metrics']
+            print(f"\n[REPORT] RESULTS ({ticker}):")
+            print(f"   - In-Sample Sharpe: {is_metrics.get('sharpe', 0):.2f}")
+            print(f"   - Out-of-Sample Sharpe: {oos_metrics.get('sharpe', 0):.2f}")
+            print(f"   - OOS Max Drawdown: {oos_metrics.get('max_drawdown', 0):.2%}")
+            print("\n[SUCCESS] Check 'data/strategic_history.db' for full audit logs.")
+            
+    elif args.scan:
         ts.run_scan(pipeline=args.scan)
     elif args.report:
         ts.broadcast_report(pipeline=args.report)

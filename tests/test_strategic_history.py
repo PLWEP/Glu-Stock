@@ -2,7 +2,7 @@ import unittest
 import os
 import sqlite3
 from orchestrator.orchestrator import PipelineOrchestrator
-from utils.history import StrategicHistoryManager
+from utils.history import HistoryManager
 
 class TestStrategicHistory(unittest.TestCase):
     
@@ -10,7 +10,7 @@ class TestStrategicHistory(unittest.TestCase):
         self.db_path = "data/test_history.db"
         if os.path.exists(self.db_path):
             os.remove(self.db_path)
-        self.hm = StrategicHistoryManager(db_path=self.db_path)
+        self.hm = HistoryManager(db_path=self.db_path)
         
     def test_logging_and_query(self):
         """ Verify that events are logged to SQLite and retrievable via command. """
@@ -22,14 +22,13 @@ class TestStrategicHistory(unittest.TestCase):
         
         # 2. Inject this HM into a mock orchestrator
         orch = PipelineOrchestrator()
-        orch.history_manager = self.hm
+        orch.history = self.hm
         
         # 3. Test Command Parser
         # a) Recent History
         report = orch.handle_history_command("/history")
-        self.assertIn("RECENT", report.upper())
-        self.assertIn("RECAP", report.upper())
-        self.assertIn("PROFIT", report.upper())
+        self.assertIn("TRADING", report.upper())
+        self.assertIn("TERAKHIR", report.upper())
         
         # b) Strategy Filter
         report_daily = orch.handle_history_command("/history daily")

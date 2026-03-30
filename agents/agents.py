@@ -12,6 +12,7 @@ from strategies.monthly import MonthlyStrategy
 from utils.logger import JsonLogger
 from utils.config import ConfigLoader
 from utils.ml_predictor import MLPredictor
+from data.database import TradingDatabase
 from agents.fundamental import FundamentalAgent
 from utils.cnn_predictor import CNNPredictor
 

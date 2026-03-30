@@ -87,7 +87,7 @@ class PCTrainer:
         }
         
         joblib.dump(metadata, model_path)
-        print(f"\n✅ SUCCESS: Model exported to {model_path}")
+        print(f"\nSUCCESS: Model exported to {model_path}")
         print(f"Best Params: {grid_search.best_params_}")
         return model_path
 
