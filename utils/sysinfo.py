@@ -1,14 +1,12 @@
 import os
 import psutil
 import time
-import subprocess
-import json
 from datetime import datetime
 from typing import Dict, Any, Tuple
 
 class SystemMonitor:
     """
-    Utility for tracking hardware health and process resources on Termux/Android.
+    Utility for tracking hardware health and process resources on PC.
     Includes Hardware-Aware Throttling logic.
     """
     def __init__(self):
@@ -16,8 +14,8 @@ class SystemMonitor:
         self.start_time = time.time()
         
         # Hardware Thresholds for Throttling
-        self.temp_threshold = 45.0
-        self.battery_threshold = 15.0
+        self.temp_threshold = 85.0 # Higher for PCs
+        self.battery_threshold = 10.0
 
     def get_memory_stats(self) -> Dict[str, Any]:
         """ Returns process memory and system memory stats. """
@@ -38,27 +36,19 @@ class SystemMonitor:
         }
 
     def get_hardware_status(self) -> Dict[str, Any]:
-        """ Fetches battery and thermal info via Termux API or psutil. """
-        status = {"battery_pct": 0, "battery_status": "Unknown", "temperature": 0.0, "cpu_percent": 0.0}
+        """ Fetches system battery and cpu info via psutil. """
+        status = {"battery_pct": 100, "battery_status": "Unknown", "temperature": 0.0, "cpu_percent": 0.0}
         
         try:
             status["cpu_percent"] = psutil.cpu_percent(interval=None)
         except: pass
 
         try:
-            result = subprocess.run(["termux-battery-status"], capture_output=True, text=True, timeout=2)
-            if result.returncode == 0:
-                data = json.loads(result.stdout)
-                status["battery_pct"] = data.get('percentage', 0)
-                status["battery_status"] = data.get("status", "Unknown")
-                status["temperature"] = float(data.get('temperature', 0.0))
-        except:
-            try:
-                battery = psutil.sensors_battery()
-                if battery:
-                    status["battery_pct"] = battery.percent
-                    status["battery_status"] = "Charging" if battery.power_plugged else "Discharging"
-            except: pass
+            battery = psutil.sensors_battery()
+            if battery:
+                status["battery_pct"] = battery.percent
+                status["battery_status"] = "Charging" if battery.power_plugged else "Discharging"
+        except: pass
                 
         return status
 
@@ -69,8 +59,8 @@ class SystemMonitor:
         """
         hw = self.get_hardware_status()
         
-        # 1. Temperature Check
-        if hw["temperature"] > self.temp_threshold:
+        # 1. Temperature Check (Optional for PC if sensors available)
+        if hw["temperature"] > self.temp_threshold and hw["temperature"] > 0:
             return False, f"Temperature too high ({hw['temperature']}°C)"
             
         # 2. Battery Check (if not charging)
@@ -80,6 +70,7 @@ class SystemMonitor:
         return True, "Safe"
 
     def get_status(self) -> Dict[str, Any]:
+        """ Aggregates system metrics. """
         hw = self.get_hardware_status()
         mem = self.get_memory_stats()
         return {

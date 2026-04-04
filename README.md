@@ -29,24 +29,6 @@ Managing the bot is now easier with the unified Windows Batch menu:
    # Choose [3] to validate your strategy in the Laboratory.
    ```
 
-## 📱 Termux Quick Start
-
-1. **Install Termux API App**:
-   - Install **Termux:API** from [F-Droid](https://f-droid.org/en/packages/com.termux.api/).
-   - Grant necessary hardware permissions in Android Settings.
-
-2. **Run Automated Setup**:
-   - **Termux**: `./termux_setup.sh`
-
-3. **Transfer Brains**:
-   Copy everything from `data/models/*.joblib` and `data/models/*.tflite` (from PC) to `~/Glu-Stock/data/models/` on Termux.
-
-4. **Activate All**:
-   ```bash
-   pm2 start ecosystem.config.js
-   pm2 save
-   ```
-
 ## 🤖 Bot Commands
 
 - `/start`: Open Main Menu.
@@ -57,7 +39,10 @@ Managing the bot is now easier with the unified Windows Batch menu:
 ## 🛠️ Tech Stack
 - **Python 3.13**: Quant engine, Scikit-Learn, joblib, yfinance.
 - **Node.js 22+**: Baileys (WhatsApp) bridge.
-- **SQLite**: High-performance bulk-caching and long-term trade audit trail.
+- **SQLite / Firebase**: Cloud synchronization for trades and auditing.
 
 ---
 *Institutional Grade | ML Powered | Strategically Optimized*
+ Riverside
+ Riverside
+ Riverside

@@ -1,48 +1,30 @@
-# Glu-Stock Project Grounding
+# GLU-STOCK: PROJECT CHECKPOINT (v16.0)
 
-## Project Overview
+## System Overview
+Glu-Stock is a high-performance quantitative trading framework consolidated for PC/Laptop execution. It uses a cloud-synced intelligence layer (Firebase) to manage trading state, history, and audits.
 
-Glu-Stock is an institutional-grade, multi-agent quantitative trading engine optimized for the IDX (Indonesia Stock Exchange). It features a 24/7 autonomous lifecycle, ensemble intelligence (RF + CNN), and a math-driven Institutional Core (ARP + Linear Trend).
+## 🚀 Key Features (PC Consolidated)
+- **Deep Intelligence (v11)**: Dual-Brain Ensemble (RF + CNN) agreement for high-conviction trades.
+- **Firebase Cloud Sync**: Real-time state synchronization for trades and logs.
+- **Institutional Engine**: hardware-aware throttling (PC optimized), high-performance bulk caching (SQLite).
+- **Consolidated Unified Workflow**: One Batch menu (`setup_pc.bat`) for environment setup, training, and backtesting.
 
-## 🤖 Platform Consolidation (v14.1.0)
+## 📁 Repository Structure (Core)
+- `agents/`: Research, Strategy, and Trading agents.
+- `orchestrator/`: Pipeline lifecycle and risk guards.
+- `strategies/`: Multi-timeframe strategies (Daily, Weekly, Monthly).
+- `utils/`: Cloud handlers, ML/CNN predictors, and system monitors (PC Optimized).
+- `data/`: Local OHLCV cache and model storage.
 
-The system is now fully hardened and focused exclusively on the **Telegram Bot** for personal professional use.
+## 🏗️ Technical State
+1. **Environment**: `pc_venv` (Python 3.13.5).
+2. **Database**: Firebase Realtime DB (Source of Truth) + SQLite (Local Cache).
+3. **Hardware Health**: Throttling enabled via `psutil` (85°C Temp Limit).
+4. **Execution Mode**: Paper Trading / Strategy Validation.
 
-- **Unified Training Fixed**: Resolved all execution errors (Unicode, Missing Features) for the RF and CNN brains.
-- **Backtest Lab Restored**: Menu option [3] in `setup_pc.bat` is now fully operational with the `HistoricalBacktester` correctly integrated.
-- **History Module Sync**: Consistently logs all scan and trade events with comprehensive Telegram Command Support.
-- **Telegram Interface**: All commands, reports, and alerts are delivered directly to the user's private Telegram chat.
-
-## 🏛️ Module Logic: Institutional Core (v12.0)
-
-The foundational risk and strategy layer, transforming the bot into a Target-Exposure Fund Manager.
-
-- **Trend-Following Backbone**: Uses EMA of volatility-normalized returns (Return / EWMA_Vol).
-- **Linear Conviction**: Signals range from -1.0 to +1.0, defining target exposure levels.
-- **Agnostic Risk Parity (ARP)**: Portfolio weights derived from Sigma^-1/2.
-- **Basket Trading**: Optimized for High-N portfolios (Daily pipeline).
-
-## 🧠 Module Logic: Deep Intelligence (v11.0)
-
-- **Dual-Brain Ensemble**: 
-    - **Brain 1 (RF)**: Scikit-learn Random Forest.
-    - **Brain 2 (CNN)**: 10-layer 1D-CNN.
-- **TFLite Conversion**: Models optimized for low-latency Termux execution.
-
-## 📊 Module Logic: Strategic Master (v8.0.0)
-
-- **Inter-Strategy Allocation**: Dynamic rebalancing based on Sharpe ratios.
-- **Expectancy Safeguard**: Gatekeeper pausing underperforming strategies.
-
-## 🛡️ Module Logic: Resilience & Monitoring
-
-- **Hardware Throttling**: Battery/Thermal protection.
-- **ATR Trailing Stop**: Dynamic protective floor.
-- **Telegram Bot**: Ayang persona for real-time monitoring and control.
-
-## Core Execution Rules
-
-1. **Python Path**: `c:/Users/MP2NE93D/miniconda3/python.exe`.
-2. **Environment**: `pc_venv` (Windows) / `glustock_venv` (Termux).
-3. **Commit Policy**: Conventional Commits.
-4. **Documentation Sync**: Always update `README.md`, `changelog.md`, and `checkpoint.md`.
+---
+*Consolidation Date*: 2026-04-04
+*Status*: Active Development | PC-Focused
+ Riverside
+ Riverside
+ Riverside
