@@ -67,6 +67,10 @@ class ConfigLoader:
             params["capital"] = self.config["initial_cash"]
         return params
 
+    def get_firebase_config(self) -> Dict[str, Any]:
+        """ Returns Firebase configuration. """
+        return self.config.get("firebase", {"enabled": False})
+
     def get_config(self) -> Dict[str, Any]:
         """ Returns the full configuration dictionary. """
         return self.config

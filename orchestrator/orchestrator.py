@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from agents.agents import ResearchAgent, StrategyAgent, TradingAgent, UniverseSelectionAgent
 from utils.persistence import SignalPersistence
-from utils.history import HistoryManager
+from utils.firebase_handler import FirebaseHandler
 from utils.logger import JsonLogger
 from utils.sysinfo import SystemMonitor
 from utils.alerts import broadcast_alert
@@ -33,7 +33,7 @@ class PipelineOrchestrator:
         self.allocator = StrategyAllocator(total_capital=self.config.get('initial_cash', 100000000.0))
         
         self.persistence = SignalPersistence()
-        self.history = HistoryManager()
+        self.history = FirebaseHandler(ConfigLoader().get_firebase_config())
 
     def run_full_pipeline(self, pipeline: str = "daily"):
         # 1. Hardware Safety Check

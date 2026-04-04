@@ -6,6 +6,12 @@ paper_trading: true
 initial_cash: 100000000.0 # Rp 100 Juta
 max_stocks_to_scan: 1000
 
+# --- FIREBASE SETTINGS ---
+firebase:
+    enabled: true
+    database_url: "https://your-project-id.firebaseio.com/"
+    service_account_path: "firebase_key.json"
+
 # --- BOT SETTINGS ---
 telegram:
     enabled: true

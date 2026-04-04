@@ -12,7 +12,7 @@ from strategies.monthly import MonthlyStrategy
 from utils.logger import JsonLogger
 from utils.config import ConfigLoader
 from utils.ml_predictor import MLPredictor
-from data.database import TradingDatabase
+from utils.firebase_handler import FirebaseHandler
 from agents.fundamental import FundamentalAgent
 from utils.cnn_predictor import CNNPredictor
 
@@ -123,7 +123,7 @@ class TradingAgent:
         self.cash = initial_cash or self.config.get("initial_cash", 100000000.0)
         self.execution_engine = ExecutionEngine()
         self.risk_manager = RiskManager()
-        self.db = TradingDatabase()
+        self.db = FirebaseHandler(ConfigLoader().get_firebase_config())
         
         self.portfolios: Dict[str, Portfolio] = {}
         strat_settings = self.config.get("strategies", {})
