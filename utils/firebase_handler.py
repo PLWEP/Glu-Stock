@@ -15,18 +15,35 @@ class FirebaseHandler:
         self.root_ref = db.reference("glu_stock")
 
     def _initialize_firebase(self):
-        """Initializes Firebase Admin SDK."""
+        """Initializes Firebase Admin SDK with support for raw dict secrets."""
         if not firebase_admin._apps:
-            cert_path = self.config.get("service_account_path", "firebase_key.json")
-            if not os.path.exists(cert_path):
-                # Fallback to dummy or raise error in production
-                print(f"[WARNING] Firebase key {cert_path} not found. Using local mock/offline mode.")
-                # For now, we assume the user will provide the key.
+            # Check for raw secret dict (Kaggle) or file path
+            secret_data = self.config.get("service_account_json")
+            if secret_data:
+                cred = credentials.Certificate(secret_data)
+            else:
+                cert_path = self.config.get("service_account_path", "firebase_key.json")
+                if not os.path.exists(cert_path):
+                    print(f"[WARNING] Firebase key {cert_path} not found.")
+                cred = credentials.Certificate(cert_path)
             
-            cred = credentials.Certificate(cert_path)
             firebase_admin.initialize_app(cred, {
                 'databaseURL': self.config.get("database_url")
             })
+
+    # --- Task Queue Interface ---
+    def push_task(self, queue_name: str, data: Any):
+        """ Pushes a task to a designated queue. """
+        self.root_ref.child(f"task_queue/{queue_name}").push(data)
+
+    def get_and_clear_queue(self, queue_name: str) -> List[Any]:
+        """ Retrieves all tasks from a queue and clears it. """
+        ref = self.root_ref.child(f"task_queue/{queue_name}")
+        tasks = ref.get()
+        if not tasks: return []
+        ref.delete()
+        # tasks is a dict {push_id: data}
+        return list(tasks.values())
 
     # --- TradingDatabase Interface ---
     def insert_trade(self, trade_data: Dict[str, Any]):

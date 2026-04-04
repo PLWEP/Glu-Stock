@@ -8,13 +8,15 @@ from utils.logger import JsonLogger
 
 class MLPredictor:
     """
-    Lean inference engine for Termux.
-    Loads pre-trained models from PC and provides high-speed predictions.
+    Inference engine for PC/Cloud kernels.
+    Loads pre-trained models and provides high-speed predictions.
     """
-    def __init__(self, model_dir: str = "data/models"):
-        self.model_dir = model_dir
+    def __init__(self, model_dir: str = None):
+        self.model_dir = model_dir or "data/models"
         self.logger = JsonLogger(log_file="logs/ml_predictor.log")
-        os.makedirs(self.model_dir, exist_ok=True)
+        
+        if not os.path.exists(self.model_dir):
+            os.makedirs(self.model_dir, exist_ok=True)
         
         self.model_path = os.path.join(self.model_dir, "glu_brain_v1.joblib")
         
@@ -27,10 +29,9 @@ class MLPredictor:
         self._load_brain()
 
     def _load_brain(self):
-        """ Loads the model and metadata exported from PC. """
+        """ Loads the model and metadata. """
         if os.path.exists(self.model_path):
             try:
-                # joblib is fast and handles sklearn models well
                 brain = joblib.load(self.model_path)
                 
                 if isinstance(brain, dict):
@@ -48,24 +49,18 @@ class MLPredictor:
             except Exception as e:
                 self.logger.error("MLPredictor: Failed to load brain", error=str(e))
         else:
-            self.logger.warning(f"MLPredictor: No brain found at {self.model_path}. (Ready for PC export)")
+            self.logger.warning(f"MLPredictor: No brain found at {self.model_path}.")
 
     def predict_proba(self, latest_features: pd.DataFrame) -> float:
-        """
-        Fast inference using the pre-trained brain.
-        """
+        """ Fast inference using the pre-trained brain. """
         if self.model is None:
             return 0.5 # Neutral if no model
             
         try:
-            # Explicitly select features in the correct order as trained
             X = latest_features[self.features].tail(1)
-            
-            # Predict probability of class '1' (Price increase)
             prob = self.model.predict_proba(X)[0][1]
             return float(prob)
         except Exception as e:
-            # Silent fallback to neutral during inference
             return 0.5
 
     def get_info(self) -> Dict[str, Any]:
@@ -76,3 +71,6 @@ class MLPredictor:
             "trained_at": self.metadata.get("trained_at", "N/A"),
             "features": self.features
         }
+ Riverside
+ Riverside
+ Riverside
