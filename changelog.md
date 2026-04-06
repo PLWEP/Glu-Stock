@@ -1,52 +1,62 @@
 # Changelog
 
+## [v18.0.0] - 2026-04-06
+### Changed
+- **Model Upgrade**: Replaced Random Forest with **LightGBM** single model (10x faster training, identical accuracy).
+- **Stacking Removed**: Removed XGBoost + CatBoost stacking ensemble (overkill for <1% accuracy gain).
+- **CNN Simplified**: Removed LSTM layer, Optuna HPO, and Meta-Labeling dependency from CNN pipeline. Now uses lightweight Conv1D + GlobalAvgPool with native TFLite export.
+- **Triple Barrier**: Upgraded from binary (up/down) to 2-class Triple Barrier labeling (BUY vs DONT_BUY, TP=3%, SL=2%, horizon=10 days).
+- **Independent Notebooks**: `00a` and `00b` now run fully independently (no Meta-Labeling data dependency).
+
+### Added
+- **12-Feature Engineering**: RSI, MACD, BB_High, BB_Low, ATR, ADX, OBV_norm, day_of_week, week_of_month, frac_diff_close, vol_ratio, Returns.
+- **Fractional Differentiation**: López de Prado fixed-window (100 days) for stationarity with memory.
+- **SMOTE Oversampling**: Balanced BUY/DONT_BUY classes on training set only.
+- **Feature Selection**: Mutual Information ranking, top 10 features auto-selected.
+- **Optuna HPO**: 50 trials for LightGBM (num_leaves, max_depth, learning_rate, min_child_samples).
+- **Walk-Forward CV**: 4-split expanding window temporal validation.
+- **Pipeline Diagnostics**: Per-stage counters (OK/Empty/Short/Dropna/Error) for data aggregation.
+- **Meta-Label Gate** in `02_signal_inference.ipynb`: Execute only when LightGBM=BUY AND CNN confidence ≥60%.
+
+### Fixed
+- **frac_diff overflow**: Changed from threshold-based (1e-5) to fixed window=100. Previous impl produced ~1200 weights for ~1250 data points, causing 95%+ NaN.
+- **yfinance MultiIndex**: Added `.squeeze()` + `ndim > 1` fallback for all OHLCV columns.
+- **yfinance FutureWarning**: Suppressed with `warnings.filterwarnings('ignore')` + explicit `auto_adjust=True`.
+- **LGBMClassifier feature names**: Passed `pd.DataFrame(columns=...)` instead of raw numpy to eliminate sklearn warning.
+
+### Removed
+- **35 patch scripts**: Cleaned up all one-shot `patch_*.py`, `fix_*.py`, `dump_*.py`, `test_*.py`, and `debug_*.py` files from project root.
+
+## [v17.0.0] - 2026-04-04
+### Changed
+- **Cloud Migration**: Migrated entire system from Termux/PC to Kaggle-native architecture.
+- **Monolithic Notebooks**: Consolidated system into 6 self-contained `.ipynb` files with embedded infrastructure.
+- **Firebase Integration**: Replaced SQLite with Firebase Firestore for cloud state management.
+- **Market Universe**: Expanded from LQ45 (45 tickers) to full Papan Utama (259 tickers) with 3-tier fallback.
+
 ## [v14.1.0] - 2026-03-31
 ### Fixed
-- **History Module Sync**: Resolved `ImportError: HistoryManager` in `orchestrator.py` by refactoring `utils/history.py`.
-- **Dependency Missing**: Fixed `NameError: TradingDatabase` in `agents/agents.py`.
-- **Config Hardening**: Updated `ConfigLoader` to support current `config.yaml` schema (`initial_cash`, `risk` levels).
-- **Training Stability**: Removed emojis and standardized column naming to fix `UnicodeEncodeError` and `KeyError` in unified training.
-- **Backtest Lab**: Implemented missing `--backtest` CLI logic in `scheduler.py` for full menu functionality.
+- **History Module Sync**: Resolved `ImportError: HistoryManager` in `orchestrator.py`.
+- **Config Hardening**: Updated `ConfigLoader` for current `config.yaml` schema.
+- **Training Stability**: Fixed `UnicodeEncodeError` and `KeyError` in unified training.
+- **Backtest Lab**: Implemented `--backtest` CLI logic in `scheduler.py`.
 
 ## [v14.0.0] - 2026-03-30
 ### Removed
-- **WhatsApp Integration**: Deleted `wa_bot.js` and removed all Baileys bridge logic from `alerts.py` and `orchestrator.py`.
-- **PM2 Consolidation**: Removed `glu-stock-wa` from `ecosystem.config.js`.
-
-### Changed
-- **SaaS Guard Disabled**: Temporary suspension of Telegram Channel broadcasting and subscriber auto-kick logic.
-- **Platform Focus**: System consolidated to focus exclusively on Telegram for personal professional use.
+- **WhatsApp Integration**: Deleted `wa_bot.js` and Baileys bridge.
+- **SaaS Guard**: Suspended Telegram Channel broadcasting.
 
 ## [v11.0.0] - 2026-03-29
-...
-
-## [v8.0.0] - 2026-03-29
-...
-
-## [v3.1.0] - 2026-03-29
-...
+### Added
+- Deep Intelligence (CNN) integration with TFLite.
+- Institutional Core (Trend & Risk Parity).
+- Telegram Signal SaaS & Admin Automation.
 
 ## [v2.0.0] - 2026-03-29
 ### Added
-- **Production Hardening**:
-    - `RotatingFileHandler`: Implemented log rotation (5MB, 3 backups) in `JsonLogger` to prevent storage exhaustion.
-    - **Recursion Guard**: decoupled alerts from error logging to prevent infinite loops during network failure.
-    - **Resilient Polling**: Added retry backoff mechanism to `TelegramBot` polling loop.
-
-### Fixed
-- **VWAP Accuracy**: Fixed the `DailyStrategy` to correctly reset VWAP calculations at each market open.
-- **Data Performance**: Optimized `StockDataHandler` with bulk SQL `executemany` inserts (80% faster caching).
-- **Security**: Switched WhatsApp command execution from `exec` to `spawn` with argument arrays to prevent shell injection.
-
-## [v1.5.0] - 2026-03-28
-### Added
-- Multi-interval data support (1d, 15m, 1h) in `StockDataHandler` and `ResearchAgent`.
-- Intraday ISO timestamp caching for high-frequency signal generation.
-
-### Changed
-- `UniverseManager` now enforces Rp25B/500k lot liquidity floor and prioritizes LQ45/Kompas100.
+- Production hardening: log rotation, recursion guard, resilient polling.
+- VWAP accuracy fix, bulk SQL inserts, shell injection prevention.
 
 ## [v0.1.0] - 2026-03-27
 ### Added
 - Initial project structure and multi-agent core.
-- SQLite data caching and Telegram integration.
