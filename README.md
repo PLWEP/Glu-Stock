@@ -1,48 +1,45 @@
 # Glu-Stock 💹
 
-Quantitative Finance Framework for Stock Analysis, optimized for IDX (Indonesia Stock Exchange). Features a multi-agent engine with Intelligence Layer (Fundamentals + ML), and dual-platform bot integration (Telegram & WhatsApp).
+Kaggle-native quantitative trading framework for IDX (Indonesia Stock Exchange). Features autonomous ML retraining, cloud-native signal inference, and Firebase-based state management — all running on free Kaggle compute.
 
-## 🧠 Deep Intelligence (v11.0)
+## 🧠 ML Intelligence (v18.0)
 
-Glu-Stock now uses a **Dual-Brain Ensemble** for decision making:
-- **RF Brain (v1)**: Scikit-learn Random Forest for tabular/technical analysis.
-- **CNN Brain (v2)**: 10-layer Convolutional Neural Network for temporal/visual price patterns.
-- **Decision Engine**: High-confidence trades (`🧠`) now require agreement from both intelligence layers.
+Dual-model ensemble for institutional-grade signal generation:
 
-## 💻 PC Command Center (Recommended)
+- **LightGBM Brain**: Gradient boosting with 12-feature engineering (RSI, MACD, ATR, ADX, OBV, Fractional Differentiation, Time-Based). Trained with Optuna HPO, SMOTE oversampling, and Walk-Forward validation.
+- **CNN Brain**: Lightweight 1D-Convolutional Neural Network for 30-day OHLCV pattern recognition. Native TFLite export for fast inference.
+- **Meta-Label Gate**: Signals execute ONLY when LightGBM says "BUY" AND CNN confidence exceeds 60% threshold.
 
-Managing the bot is now easier with the unified Windows Batch menu:
+### Key ML Strategies
+- **Triple Barrier Labeling**: Risk-aware 2-class target (BUY vs DONT_BUY) with TP=3%, SL=2%, Horizon=10 days
+- **Feature Selection**: Mutual Information ranking, top 10 features selected
+- **SMOTE**: Synthetic oversampling for class balance
+- **Walk-Forward CV**: Expanding window temporal validation (no shuffle)
 
-1. **Run Setup**:
-   ```cmd
-   setup_pc.bat
-   # Choose [1] to initialize the environment and dependencies.
-   ```
-2. **Train AI (The Brains)**:
-   ```cmd
-   setup_pc.bat
-   # Choose [2] to run unified training (RF + CNN) for all time horizons.
-   ```
-3. **Run Backtests**:
-   ```cmd
-   setup_pc.bat
-   # Choose [3] to validate your strategy in the Laboratory.
-   ```
+## 📁 Repository Structure
 
-## 🤖 Bot Commands
+```
+notebooks/
+├── 00a_model_retraining_rf.ipynb   # LightGBM retraining (weekly scheduled)
+├── 00b_model_retraining_cnn.ipynb  # CNN retraining (weekly scheduled)
+├── 01_research_scan.ipynb          # Universe scanning & candidate selection
+├── 02_signal_inference.ipynb       # Dual-model inference + Meta-Label gate
+├── 03_execution_engine.ipynb       # Trade execution & position management
+└── 04_monitor_alert.ipynb          # Portfolio monitoring & Telegram alerts
+```
 
-- `/start`: Open Main Menu.
-- `/status`: System health + Portfolio + **Market Regime (`📈`/`📉`)**.
-- `/signals`: Recommendations with **Ensemble Confidence (`Ens`)**.
-- `/panic`: Liquidate all clusters immediately.
+## 🏗️ Architecture
+
+- **Compute**: Kaggle Kernels (scheduled runs, 12h rotation)
+- **State Bridge**: Firebase Firestore (task queues, trade history, telemetry)
+- **Model Storage**: Kaggle Datasets (`glustock-brains`)
+- **Market Universe**: 259 Papan Utama tickers (3-tier fallback: IDX API → GitHub → Hardcoded)
+- **Secrets**: Kaggle Secrets / `.env` for local development
 
 ## 🛠️ Tech Stack
-- **Python 3.13**: Quant engine, Scikit-Learn, joblib, yfinance.
-- **Node.js 22+**: Baileys (WhatsApp) bridge.
-- **SQLite / Firebase**: Cloud synchronization for trades and auditing.
+- **Python 3.12+**: LightGBM, TensorFlow, Scikit-Learn, yfinance, ta
+- **Firebase**: Firestore for cloud state synchronization
+- **TFLite**: Lightweight CNN inference binary
 
 ---
-*Institutional Grade | ML Powered | Strategically Optimized*
- Riverside
- Riverside
- Riverside
+*Institutional Grade | ML Powered | Cloud Native | v18.0*
