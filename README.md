@@ -1,45 +1,36 @@
 # Glu-Stock 💹
 
-Kaggle-native quantitative trading framework for IDX (Indonesia Stock Exchange). Features autonomous ML retraining, cloud-native signal inference, and Firebase-based state management — all running on free Kaggle compute.
+Kaggle-native quantitative trading framework for IDX (Indonesia Stock Exchange). Features an institutional-grade ML pipeline, recursive model discovery, and an autonomous self-sequencing execution engine.
 
-## 🧠 ML Intelligence (v18.0)
+## 🧠 ML Intelligence (v18.1)
 
-Dual-model ensemble for institutional-grade signal generation:
+Dual-model ensemble for high-precision signal generation:
 
-- **LightGBM Brain**: Gradient boosting with 12-feature engineering (RSI, MACD, ATR, ADX, OBV, Fractional Differentiation, Time-Based). Trained with Optuna HPO, SMOTE oversampling, and Walk-Forward validation.
-- **CNN Brain**: Lightweight 1D-Convolutional Neural Network for 30-day OHLCV pattern recognition. Native TFLite export for fast inference.
-- **Meta-Label Gate**: Signals execute ONLY when LightGBM says "BUY" AND CNN confidence exceeds 60% threshold.
+- **LightGBM Brain**: Tabular Alpha (**63% OOS**) with 12-feature engineering (Fractional Differentiation, Time-Based). 
+- **CNN Brain**: Lightweight Conv1D (**62% OOS**) for 30-day OHLCV pattern recognition.
+- **Meta-Label Gate**: Signals execute ONLY when LightGBM says "BUY" AND CNN confidence hits threshold.
+- **Market Regime Guard**: Automatically tightens Meta-Gate to **70%** during **BEAR** markets (IHSG < SMA200).
 
-### Key ML Strategies
-- **Triple Barrier Labeling**: Risk-aware 2-class target (BUY vs DONT_BUY) with TP=3%, SL=2%, Horizon=10 days
-- **Feature Selection**: Mutual Information ranking, top 10 features selected
-- **SMOTE**: Synthetic oversampling for class balance
-- **Walk-Forward CV**: Expanding window temporal validation (no shuffle)
+## 🚀 Institutional Features (v18.1 Hardening)
+
+- **Recursive Discovery**: Automagically finds model files (`.joblib`, `.tflite`) in deeply nested Kaggle input paths.
+- **Self-Sequencing (Wait & Retry)**: Downstream notebooks wait up to 20 mins for predecessors to complete, resolving Kaggle's simultaneous scheduling race conditions.
+- **Risk Manager (v18.1)**: 
+    - **ATR-Based Sizing**: Positions sized based on 1% Equity Risk and actual market volatility.
+    - **The Closer**: Automated monitoring and closure of trades hitting Stop-Loss or Take-Profit.
+- **No-Emoji UI**: Standardized plain-text markers for 100% character encoding compatibility in automated logs.
 
 ## 📁 Repository Structure
 
 ```
 notebooks/
-├── 00a_model_retraining_rf.ipynb   # LightGBM retraining (weekly scheduled)
-├── 00b_model_retraining_cnn.ipynb  # CNN retraining (weekly scheduled)
-├── 01_research_scan.ipynb          # Universe scanning & candidate selection
-├── 02_signal_inference.ipynb       # Dual-model inference + Meta-Label gate
-├── 03_execution_engine.ipynb       # Trade execution & position management
-└── 04_monitor_alert.ipynb          # Portfolio monitoring & Telegram alerts
+├── 00a_model_retraining_rf.ipynb   # LightGBM Alpha training (Weekly)
+├── 00b_model_retraining_cnn.ipynb  # CNN Pattern training (Weekly)
+├── 01_research_scan.ipynb          # Universe scanning & Liquidity filter
+├── 02_signal_inference.ipynb       # Dual-brain Gate + Market Regime
+├── 03_execution_engine.ipynb       # ATR Sizing & SL/TP Management
+└── 04_monitor_alert.ipynb          # Status alerts & Clean UI
 ```
 
-## 🏗️ Architecture
-
-- **Compute**: Kaggle Kernels (scheduled runs, 12h rotation)
-- **State Bridge**: Firebase Firestore (task queues, trade history, telemetry)
-- **Model Storage**: Kaggle Datasets (`glustock-brains`)
-- **Market Universe**: 259 Papan Utama tickers (3-tier fallback: IDX API → GitHub → Hardcoded)
-- **Secrets**: Kaggle Secrets / `.env` for local development
-
-## 🛠️ Tech Stack
-- **Python 3.12+**: LightGBM, TensorFlow, Scikit-Learn, yfinance, ta
-- **Firebase**: Firestore for cloud state synchronization
-- **TFLite**: Lightweight CNN inference binary
-
 ---
-*Institutional Grade | ML Powered | Cloud Native | v18.0*
+*Institutional Grade | ML Powered | Cloud Native | v18.1*

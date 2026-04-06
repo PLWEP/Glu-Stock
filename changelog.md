@@ -1,5 +1,19 @@
 # Changelog
 
+## [v18.1.0] - 2026-04-06
+### Added
+- **Recursive Model Discovery**: Implemented nested directory walking in `02_signal_inference.ipynb` to automatically locate `.joblib` and `.tflite` artifacts in any Kaggle input path.
+- **Wait & Retry (Polling)**: Added `wait_for_queue` logic to FirebaseHandler in notebooks `02`, `03`, and `04`. Notebooks now wait up to 20 minutes for predecessor data, resolving Kaggle scheduling race conditions.
+- **Market Regime Guard**: Integrated IHSG (^JKSE) trend detection. System now automatically tightens Meta-Gate to **70% confidence** during **BEAR** market regimes.
+- **ATR-Based Risk Management**: 
+    - Implemented Position Sizing based on 1% Equity Risk and 2.0x ATR volatility in `03_execution_engine.ipynb`.
+    - Added **The Closer**: Automated monitoring of `OPEN` trades for Stop-Loss (2x ATR) and Take-Profit (3x ATR) hits.
+- **Portfolio Constraint**: Implemented a hard limit of **10 concurrent positions** to maintain portfolio health and liquidity.
+
+### Changed
+- **Emoji-Free Interface**: Performed an aggressive emoji purge across all notebooks to ensure 100% character encoding compatibility in automated Kaggle environments.
+- **Enhanced Progress Tracking**: Standardized `flush=True` in all print logs to ensure real-time visibility of autonomous progress in the Kaggle UI.
+
 ## [v18.0.0] - 2026-04-06
 ### Changed
 - **Model Upgrade**: Replaced Random Forest with **LightGBM** single model (10x faster training, identical accuracy).
