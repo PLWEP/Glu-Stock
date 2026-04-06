@@ -10,9 +10,8 @@ Institutional-grade quantitative trading engine for IDX. Replaced complex ensemb
 | `00a_retrain_rf` | LightGBM training (SMOTE + Optuna) | Weekly | 12 features, FracDiff |
 | `00b_retrain_cnn` | CNN TFLite training (OHLCV Visual) | Weekly | 5-channel, 30d window |
 | `01_research` | Universe scanning & Liquidity filter | Daily | MA200 Trend Guard |
-| `02_inference` | Dual-brain Gate + Recursive Search | Daily | **BEAR/BULL Regime Guard** |
-| `03_execution` | ATR Sizing & Automated SL/TP | Daily | **Wait & Retry (Polling)** |
-| `04_monitor` | Portfolio telemetry & Telegram | Daily | No-Emoji Clean UI |
+| `02_inference` | Dual-brain Gate + Recursive Search | Daily | BEAR/BULL Regime Guard |
+| `03_exec_monitor`| ATR Sizing + SL/TP + Telegram | Daily | **Unified Workflow (v18.3)** |
 
 ## 🏗️ v18.1 Hardening Features
 1. **Recursive Model Search**: Automatically finds `.joblib` and `.tflite` in deeply nested Kaggle paths.

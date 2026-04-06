@@ -28,8 +28,7 @@ notebooks/
 ├── 00b_model_retraining_cnn.ipynb  # CNN Pattern training (Weekly)
 ├── 01_research_scan.ipynb          # Universe scanning & Liquidity filter
 ├── 02_signal_inference.ipynb       # Dual-brain Gate + Market Regime
-├── 03_execution_engine.ipynb       # ATR Sizing & SL/TP Management
-└── 04_monitor_alert.ipynb          # Status alerts & Clean UI
+└── 03_execution_monitor.ipynb      # ATR Sizing, SL/TP & Telegram (Daily)
 ```
 
 ---
