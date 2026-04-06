@@ -1,118 +1,14 @@
-{
- "cells": [
-  {
-   "cell_type": "markdown",
-   "metadata": {},
-   "source": [
-    "# \ud83d\udee1\ufe0f Glu-Stock: 02_SIGNAL_INFERENCE\n",
-    "**Phase**: Ensemble Intelligence (RF + CNN)\n",
-    "\n",
-    "This notebook retrieves candidates from the Firebase `research` queue, performs dual-brain inference, and pushes high-conviction signals to the `signals` queue."
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "!pip install -q yfinance firebase-admin pandas scikit-learn joblib tensorflow python-dotenv ta"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# \ud83c\udfd7\ufe0f SECTION 2: INFRASTRUCTURE (Firebase & Secrets)\n",
-    "import json, os, firebase_admin, joblib, numpy as np, pandas as pd, yfinance as yf\n",
-    "try: import tensorflow.lite as tflite\nexcept: import tflite_runtime.interpreter as tflite\n",
-    "from firebase_admin import credentials, firestore\n",
-    "from datetime import datetime\n",
-    "\n",
-    "try:\n",
-    "    from kaggle_secrets import UserSecretsClient\n",
-    "    IS_KAGGLE = True\n",
-    "except ImportError:\n",
-    "    IS_KAGGLE = False\n",
-    "\n",
-    "class KaggleInfra:\n",
-    "    @staticmethod\n",
-    "    def load_secrets():\n",
-    "        if IS_KAGGLE:\n",
-    "            user_secrets = UserSecretsClient()\n",
-    "            try: tg = user_secrets.get_secret(\"TELEGRAM_TOKEN\")\n",
-    "            except: tg = None\n",
-    "            return {\n",
-    "                \"key\": json.loads(user_secrets.get_secret(\"FIREBASE_KEY_JSON\")),\n",
-    "                \"telegram\": tg\n",
-    "            }\n",
-    "        else:\n",
-    "            from dotenv import load_dotenv\n",
-    "            load_dotenv()\n",
-    "            return {\n",
-    "                \"key\": json.loads(os.getenv(\"FIREBASE_KEY_JSON\", \"{}\")),\n",
-    "                \"telegram\": os.getenv(\"TELEGRAM_TOKEN\")\n",
-    "            }\n",
-    "\n",
-    "class FirebaseHandler:\n",
-    "    def __init__(self, secrets):\n",
-    "        if not firebase_admin._apps:\n",
-    "            cred = credentials.Certificate(secrets['key'])\n",
-    "            firebase_admin.initialize_app(cred)\n",
-    "        self.db = firestore.client()\n",
-    "        \n",
-    "    def get_and_clear_queue(self, queue_name: str):\n",
-    "        docs = self.db.collection(f\"glu_stock_queue_{queue_name}\").get()\n",
-    "        tasks = []\n",
-    "        for doc in docs:\n",
-    "            dt = doc.to_dict()\n",
-    "            tasks.append(dt.get('payload', dt))\n",
-    "            doc.reference.delete()\n",
-    "        return tasks\n",
-    "        \n",
-    "    def push_task(self, queue_name: str, data):\n",
-    "        # Wrap in payload to allow lists\n",
-    "        self.db.collection(f\"glu_stock_queue_{queue_name}\").add({'payload': data, 'timestamp': datetime.now().isoformat()})\n",
-    "        \n",
-    "    def insert_trade(self, trade_data):\n",
-    "        self.db.collection(\"glu_stock_trades\").add(trade_data)\n",
-    "        \n",
-    "    def get_history(self, limit=5):\n",
-    "        docs = self.db.collection(\"glu_stock_history\").order_by(\"timestamp\", direction=firestore.Query.DESCENDING).limit(limit).get()\n",
-    "        history = [doc.to_dict() for doc in docs]\n",
-    "        return {str(i): h for i, h in enumerate(reversed(history))} if history else {}\n",
-    "        \n",
-    "    def get_active_trades(self):\n",
-    "        docs = self.db.collection(\"glu_stock_trades\").where(\"status\", \"==\", \"OPEN\").get()\n",
-    "        return [doc.to_dict() for doc in docs]\n",
-    "        \n",
-    "    def log_event(self, phase, details):\n",
-    "        self.db.collection(\"glu_stock_history\").add({'timestamp': datetime.now().isoformat(), 'phase': phase.upper(), 'details': details})\n",
-    "\n",
-    "def get_dynamic_lq45():\n",
-    "    print(\"\ud83c\udf10 Fetching latest LQ45 constituents...\")\n",
-    "    fallback = [\"ACES.JK\", \"ADRO.JK\", \"AKRA.JK\", \"AMMN.JK\", \"AMRT.JK\", \"ANTM.JK\", \"ARTO.JK\", \"ASII.JK\", \"BBCA.JK\", \"BBNI.JK\", \"BBRI.JK\", \"BBTN.JK\", \"BMRI.JK\", \"BRIS.JK\", \"BRPT.JK\", \"BUKA.JK\", \"CPIN.JK\", \"CTRA.JK\", \"ESSA.JK\", \"EXCL.JK\", \"GGRM.JK\", \"GOTO.JK\", \"HRUM.JK\", \"ICBP.JK\", \"INCO.JK\", \"INDF.JK\", \"INKP.JK\", \"INTP.JK\", \"ISAT.JK\", \"ITMG.JK\", \"KLBF.JK\", \"MAPI.JK\", \"MBMA.JK\", \"MDKA.JK\", \"MEDC.JK\", \"MTEL.JK\", \"PGAS.JK\", \"PGEO.JK\", \"PTBA.JK\", \"SIDO.JK\", \"SMGR.JK\", \"SRTG.JK\", \"TLKM.JK\", \"TPIA.JK\", \"UNTR.JK\"]\n",
-    "    try:\n",
-    "        tables = pd.read_html('https://id.wikipedia.org/wiki/LQ45')\n",
-    "        for df in tables:\n",
-    "            if 'Kode' in df.columns:\n",
-    "                return (df['Kode'] + '.JK').tolist()\n",
-    "            elif 'Ticker' in df.columns:\n",
-    "                return (df['Ticker'] + '.JK').tolist()\n",
-    "    except:\n",
-    "        pass\n",
-    "    return fallback\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# \ud83e\udde0 SECTION 3: CORE LOGIC (Institutional Predictors & Meta-Label Gate)\n",
+import json
+
+f = 'notebooks/02_signal_inference.ipynb'
+with open(f, 'r', encoding='utf-8') as file:
+    data = json.load(file)
+
+# ═══════════════════════════════════════════════
+# SECTION 3: Predictors updated for Phase 18
+# ═══════════════════════════════════════════════
+section3 = [
+    "# \U0001f9e0 SECTION 3: CORE LOGIC (Institutional Predictors & Meta-Label Gate)\n",
     "import ta\n",
     "\n",
     "def frac_diff(series, d=0.4, thres=1e-5):\n",
@@ -212,16 +108,14 @@
     "            return float(output[1]) if len(output) > 1 else float(output[0])\n",
     "        except Exception as e:\n",
     "            print(f'\u26a0\ufe0f CNN predict error: {e}')\n",
-    "            return 0.5\n"
-   ]
-  },
-  {
-   "cell_type": "code",
-   "execution_count": null,
-   "metadata": {},
-   "outputs": [],
-   "source": [
-    "# \ud83d\ude80 SECTION 4: MAIN EXECUTION (Meta-Label Gated)\n",
+    "            return 0.5\n",
+]
+
+# ═══════════════════════════════════════════════
+# SECTION 4: Meta-Label Gated Execution
+# ═══════════════════════════════════════════════
+section4 = [
+    "# \U0001f680 SECTION 4: MAIN EXECUTION (Meta-Label Gated)\n",
     "META_CONFIDENCE_THRESHOLD = 0.60\n",
     "\n",
     "def run_inference():\n",
@@ -235,7 +129,7 @@
     "    \n",
     "    candidates = fb.get_and_clear_queue('research')\n",
     "    if not candidates:\n",
-    "        print('\ud83d\udced Queue empty.')\n",
+    "        print('\U0001f4ed Queue empty.')\n",
     "        return\n",
     "    \n",
     "    rf = MLPredictor(model_dir)\n",
@@ -245,7 +139,7 @@
     "    \n",
     "    for ticker_list in candidates:\n",
     "        for ticker in ticker_list:\n",
-    "            print(f'\ud83d\udd2c Analyzing {ticker}...')\n",
+    "            print(f'\U0001f52c Analyzing {ticker}...')\n",
     "            df = yf.download(ticker, period='90d', interval='1d', progress=False)\n",
     "            if len(df) < 50:\n",
     "                continue\n",
@@ -266,7 +160,7 @@
     "                    'price': float(df['Close'].iloc[-1]),\n",
     "                    'timestamp': datetime.now().isoformat()\n",
     "                }\n",
-    "                print(f'\ud83d\udd25 {ticker} APPROVED (RF: +1 @ {rf_conf:.0%} | Meta: {cnn_conf:.0%})')\n",
+    "                print(f'\U0001f525 {ticker} APPROVED (RF: +1 @ {rf_conf:.0%} | Meta: {cnn_conf:.0%})')\n",
     "            else:\n",
     "                skipped += 1\n",
     "                reason = 'RF=HOLD/SELL' if rf_signal != 1 else f'Meta={cnn_conf:.0%}<{META_CONFIDENCE_THRESHOLD:.0%}'\n",
@@ -278,7 +172,7 @@
     "            f'Meta-Label Inference Complete.',\n",
     "            f'\u2705 Approved: {len(signals)} signals',\n",
     "            f'\u26d4 Blocked: {skipped} (False Positive filter)',\n",
-    "            f'\ud83c\udfaf Gate Threshold: {META_CONFIDENCE_THRESHOLD:.0%}',\n",
+    "            f'\U0001f3af Gate Threshold: {META_CONFIDENCE_THRESHOLD:.0%}',\n",
     "        ]\n",
     "        for t, s in signals.items():\n",
     "            log_lines.append(f'  {t}: RF={s[\"rf_confidence\"]:.0%} | Meta={s[\"meta_confidence\"]:.0%}')\n",
@@ -287,31 +181,29 @@
     "            print(line)\n",
     "    else:\n",
     "        fb.log_event('INFERENCE', f'No signals passed Meta-Label gate. {skipped} candidates blocked.')\n",
-    "        print(f'\ud83d\udee1\ufe0f All {skipped} candidates blocked by Meta-Label gate.')\n",
+    "        print(f'\U0001f6e1\ufe0f All {skipped} candidates blocked by Meta-Label gate.')\n",
     "\n",
-    "run_inference()\n"
-   ]
-  }
- ],
- "metadata": {
-  "kernelspec": {
-   "display_name": "Python 3",
-   "language": "python",
-   "name": "python3"
-  },
-  "language_info": {
-   "codemirror_mode": {
-    "name": "ipython",
-    "version": 3
-   },
-   "file_extension": ".py",
-   "mimetype": "text/x-python",
-   "name": "python",
-   "nbconvert_exporter": "python",
-   "pygments_lexer": "ipython3",
-   "version": "3.10.12"
-  }
- },
- "nbformat": 4,
- "nbformat_minor": 4
-}
+    "run_inference()\n",
+]
+
+# ── Also update pip install cell ──
+for cell in data['cells']:
+    if cell['cell_type'] == 'code':
+        src = "".join(cell['source'])
+        if '!pip install' in src:
+            if 'ta' not in src:
+                new_src = src.rstrip() + ' ta'
+                cell['source'] = [new_src]
+
+# ── Inject into correct cells ──
+for cell in data['cells']:
+    if cell['cell_type'] == 'code':
+        src = "".join(cell['source'])
+        if "class MLPredictor" in src:
+            cell['source'] = section3
+        elif "def run_inference" in src:
+            cell['source'] = section4
+
+with open(f, 'w', encoding='utf-8') as file:
+    json.dump(data, file, indent=1)
+print("02 SIGNAL INFERENCE PATCHED WITH META-LABEL GATE!")

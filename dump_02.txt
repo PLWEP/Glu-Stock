@@ -1,0 +1,160 @@
+=== CELL 1 ===
+# 📦 SECTION 1: INSTALLATION
+!pip install -q yfinance firebase-admin pandas scikit-learn joblib tensorflow python-dotenv
+
+---
+=== CELL 2 ===
+# 🏗️ SECTION 2: INFRASTRUCTURE (Firebase & Secrets)
+import json, os, firebase_admin, joblib, numpy as np, pandas as pd, yfinance as yf
+try: import tensorflow.lite as tflite
+except: import tflite_runtime.interpreter as tflite
+from firebase_admin import credentials, firestore
+from datetime import datetime
+
+try:
+    from kaggle_secrets import UserSecretsClient
+    IS_KAGGLE = True
+except ImportError:
+    IS_KAGGLE = False
+
+class KaggleInfra:
+    @staticmethod
+    def load_secrets():
+        if IS_KAGGLE:
+            user_secrets = UserSecretsClient()
+            try: tg = user_secrets.get_secret("TELEGRAM_TOKEN")
+            except: tg = None
+            return {
+                "key": json.loads(user_secrets.get_secret("FIREBASE_KEY_JSON")),
+                "telegram": tg
+            }
+        else:
+            from dotenv import load_dotenv
+            load_dotenv()
+            return {
+                "key": json.loads(os.getenv("FIREBASE_KEY_JSON", "{}")),
+                "telegram": os.getenv("TELEGRAM_TOKEN")
+            }
+
+class FirebaseHandler:
+    def __init__(self, secrets):
+        if not firebase_admin._apps:
+            cred = credentials.Certificate(secrets['key'])
+            firebase_admin.initialize_app(cred)
+        self.db = firestore.client()
+        
+    def get_and_clear_queue(self, queue_name: str):
+        docs = self.db.collection(f"glu_stock_queue_{queue_name}").get()
+        tasks = []
+        for doc in docs:
+            dt = doc.to_dict()
+            tasks.append(dt.get('payload', dt))
+            doc.reference.delete()
+        return tasks
+        
+    def push_task(self, queue_name: str, data):
+        # Wrap in payload to allow lists
+        self.db.collection(f"glu_stock_queue_{queue_name}").add({'payload': data, 'timestamp': datetime.now().isoformat()})
+        
+    def insert_trade(self, trade_data):
+        self.db.collection("glu_stock_trades").add(trade_data)
+        
+    def get_history(self, limit=5):
+        docs = self.db.collection("glu_stock_history").order_by("timestamp", direction=firestore.Query.DESCENDING).limit(limit).get()
+        history = [doc.to_dict() for doc in docs]
+        return {str(i): h for i, h in enumerate(reversed(history))} if history else {}
+        
+    def get_active_trades(self):
+        docs = self.db.collection("glu_stock_trades").where("status", "==", "OPEN").get()
+        return [doc.to_dict() for doc in docs]
+        
+    def log_event(self, phase, details):
+        self.db.collection("glu_stock_history").add({'timestamp': datetime.now().isoformat(), 'phase': phase.upper(), 'details': details})
+
+def get_dynamic_lq45():
+    print("🌐 Fetching latest LQ45 constituents...")
+    fallback = ["ACES.JK", "ADRO.JK", "AKRA.JK", "AMMN.JK", "AMRT.JK", "ANTM.JK", "ARTO.JK", "ASII.JK", "BBCA.JK", "BBNI.JK", "BBRI.JK", "BBTN.JK", "BMRI.JK", "BRIS.JK", "BRPT.JK", "BUKA.JK", "CPIN.JK", "CTRA.JK", "ESSA.JK", "EXCL.JK", "GGRM.JK", "GOTO.JK", "HRUM.JK", "ICBP.JK", "INCO.JK", "INDF.JK", "INKP.JK", "INTP.JK", "ISAT.JK", "ITMG.JK", "KLBF.JK", "MAPI.JK", "MBMA.JK", "MDKA.JK", "MEDC.JK", "MTEL.JK", "PGAS.JK", "PGEO.JK", "PTBA.JK", "SIDO.JK", "SMGR.JK", "SRTG.JK", "TLKM.JK", "TPIA.JK", "UNTR.JK"]
+    try:
+        tables = pd.read_html('https://id.wikipedia.org/wiki/LQ45')
+        for df in tables:
+            if 'Kode' in df.columns:
+                return (df['Kode'] + '.JK').tolist()
+            elif 'Ticker' in df.columns:
+                return (df['Ticker'] + '.JK').tolist()
+    except:
+        pass
+    return fallback
+
+---
+=== CELL 3 ===
+# 🧠 SECTION 3: CORE LOGIC (Predictors & Agent)
+class MLPredictor:
+    def __init__(self, model_dir):
+        path = os.path.join(model_dir, "glu_brain_v1.joblib")
+        brain = joblib.load(path)
+        self.model = brain.get("model")
+        self.features = brain.get("features", [])
+
+    def predict_proba(self, df): 
+        try: return float(self.model.predict_proba(df[self.features].tail(1))[0][1])
+        except: return 0.5
+
+class CNNPredictor:
+    def __init__(self, model_dir):
+        self.interpreters = {}
+        for h in ["daily_t2"]: # Simplified for notebook
+            path = os.path.join(model_dir, f"cnn_{h}.tflite")
+            if os.path.exists(path):
+                self.interpreters[h] = tflite.Interpreter(model_path=path)
+                self.interpreters[h].allocate_tensors()
+                
+    def predict(self, df):
+        try:
+            interpreter = self.interpreters["daily_t2"]
+            data = df[['Open', 'High', 'Low', 'Close', 'Volume']].tail(30).values
+            data = (data - data.min(axis=0)) / (data.max(axis=0) - data.min(axis=0) + 1e-7)
+            input_data = np.expand_dims(data.astype(np.float32), axis=0)
+            interpreter.set_tensor(interpreter.get_input_details()[0]['index'], input_data)
+            interpreter.invoke()
+            return float(interpreter.get_tensor(interpreter.get_output_details()[0]['index'])[0][1])
+        except: return 0.5
+---
+=== CELL 4 ===
+# 🚀 SECTION 4: MAIN EXECUTION
+def run_inference():
+    secrets = KaggleInfra.load_secrets()
+    fb = FirebaseHandler(secrets)
+    
+    model_dir = "/kaggle/input/glustock-brains"
+    if not os.path.exists(model_dir): 
+        print("❌ Models missing! Please add 'glustock-brains' dataset."); return
+        
+    candidates = fb.get_and_clear_queue("research")
+    if not candidates: print("📭 Queue empty."); return
+
+    ml = MLPredictor(model_dir)
+    cnn = CNNPredictor(model_dir)
+    signals = {}
+
+    for ticker_list in candidates:
+        for ticker in ticker_list:
+            print(f"🔬 Analyzing {ticker}...")
+            df = yf.download(ticker, period="60d", interval="1d", progress=False)
+            # Simple technical feature gen for RF
+            df['MA20'] = df['Close'].rolling(20).mean()
+            df['RSI'] = 50 # Simplified for notebook demo
+            
+            p1 = ml.predict_proba(df)
+            p2 = cnn.predict(df)
+            conviction = (p1 + p2) / 2
+            
+            if conviction > 0.7:
+                signals[ticker] = {"conviction": conviction, "price": float(df['Close'].iloc[-1])}
+                print(f"🔥 {ticker} BULLISH ({conviction:.2f})")
+
+    if signals:
+        fb.push_task("signals", signals)
+        fb.log_event("INFERENCE", f"Generated {len(signals)} signals.")
+
+run_inference()
+---
