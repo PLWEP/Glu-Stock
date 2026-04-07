@@ -20,16 +20,19 @@ Dual-model ensemble for high-precision signal generation:
     - **The Closer**: Automated monitoring and closure of trades hitting Stop-Loss or Take-Profit.
 - **No-Emoji UI**: Standardized plain-text markers for 100% character encoding compatibility in automated logs.
 
-## 📁 Repository Structure
+## 🛰️ Project Structure (v18.x)
 
-```
-notebooks/
-├── 00a_model_retraining_rf.ipynb   # LightGBM Alpha training (Weekly)
-├── 00b_model_retraining_cnn.ipynb  # CNN Pattern training (Weekly)
-├── 01_research_scan.ipynb          # Universe scanning & Liquidity filter
-├── 02_signal_inference.ipynb       # Dual-brain Gate + Market Regime
-└── 03_execution_monitor.ipynb      # ATR Sizing, SL/TP & Telegram (Daily)
-```
+The engine is now fully self-contained across 5 monolithic notebooks designed for Kaggle deployment:
+
+1.  **`00a_model_retraining_rf.ipynb`**: Weekly LightGBM retraining.
+2.  **`00b_model_retraining_cnn.ipynb`**: Weekly CNN retraining.
+3.  **`01_research_scan.ipynb`**: Daily universe selection & ranking.
+4.  **`02_signal_inference.ipynb`**: Daily dual-brain Meta-Gate inference.
+5.  **`03_execution_monitor.ipynb`**: Daily trade execution, risk management, and 08:30 WIB recap.
+
+**Core Assets**:
+*   `data/models/`: Production-ready model artifacts.
+*   `Firebase`: Global state management and cross-notebook signaling.
 
 ---
 *Institutional Grade | ML Powered | Cloud Native | v18.1*
