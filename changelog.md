@@ -1,5 +1,15 @@
 # Changelog
 
+## [v18.16.0] - 2026-04-07
+### Removed
+- **Root Cleanup**: Purged all remaining legacy scripts and config files (`config.yaml`, `scheduler.py`, `telegram_bot.py`, `tickers.json`, etc.).
+- **Environment Debris**: Deleted `.env`, `package.json`, and older `venv` setup scripts.
+
+## [v18.15.0] - 2026-04-07
+### Changed
+- **Global Decommissioning**: Completed the mass purge of all legacy module directories (`agents`, `risk`, `utils`, `strategies`, `reporting`, `portfolio`, `orchestrator`, `tests`).
+- **Cleanroom Status**: Repository has reached a pristine state, containing only the high-performance v18.x notebooks and essential model assets.
+
 ## [v18.1.0] - 2026-04-06
 ### Added
 - **Recursive Model Discovery**: Implemented nested directory walking in `02_signal_inference.ipynb` to automatically locate `.joblib` and `.tflite` artifacts in any Kaggle input path.

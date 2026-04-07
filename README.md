@@ -35,4 +35,4 @@ The engine is now fully self-contained across 5 monolithic notebooks designed fo
 *   `Firebase`: Global state management and cross-notebook signaling.
 
 ---
-*Institutional Grade | ML Powered | Cloud Native | v18.1*
+*Institutional Grade | ML Powered | Cloud Native | v18.16*
