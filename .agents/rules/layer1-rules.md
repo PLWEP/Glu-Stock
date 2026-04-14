@@ -2,7 +2,7 @@
 trigger: always_on
 ---
 
-1. Python Path: Always use `c:/Users/MP2NE93D/miniconda3/python.exe`.
+1. Python: Always create env before executing if already there then use it.
 2. Environment Isolation: Mandatory `conda create` for every test run. Auto-delete environment immediately after successful execution/testing.
 3. Commit Protocol: Standardize on Conventional Commits (e.g., `feat:`, `fix:`, `refactor:`).
 4. Documentation Sync: Every update MUST reflect in `readme.md`, `changelog.md`, and `checkpoint.md`. `checkpoint.md` is the ground truth for project logic; read it before any planning.
