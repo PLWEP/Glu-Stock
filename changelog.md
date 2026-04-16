@@ -1,9 +1,18 @@
 # Changelog
 
+## [v19.0.0] - 2026-04-16
+### Added
+- **Enriched Prompting**: Integrated RSI, MACD, ATR, and Bollinger Bands into the Strategic Brain prompt for higher precision reasoning.
+- **Parallel Inference**: Implemented `ThreadPoolExecutor` for parallel data fetching in the signal audit stage.
+- **Dynamic Fees Model**: Added IDX-specific sell tax (0.1%) and broker commission (0.2%) to backtest simulations.
+- **Advanced Metrics**: Integrated Sharpe Ratio, Sortino Ratio, and Max Drawdown (MDD) calculations into the Performance Lab.
+- **Strategy Visualizer**: Automated generation of 30-day OHLCV charts with target overlays, sent directly to Telegram.
+
 ## [v18.26.0] - 2026-04-16
 ### Added
 - **CNN-LLM Dual Core**: Transitioned to a specialized architecture using CNN for visual pattern recognition and Gemma-7B (LLM) for strategic auditing.
 - **Expectancy Metrics**: Added Profit Factor and Expectancy calculations to the Performance Lab.
+- **Project Audit**: Completed a comprehensive project analysis and generated a future development roadmap.
 
 ### Changed
 - **Pipeline Consolidation**: Merged Research and Inference into a single stage. Reduced production footprint to 3 core notebooks.
