@@ -1,41 +1,39 @@
-# ️ GLU-STOCK v18.25: KAGGLE DEPLOYMENT GUIDE
+# ️ GLU-STOCK v18.26: KAGGLE DEPLOYMENT GUIDE
 
-Panduan resmi setup dan operasional Glu-Stock Institutional Hub di lingkungan Kaggle.
+Panduan resmi setup dan operasional Glu-Stock "CNN-LLM Dual Core" di lingkungan Kaggle.
 
 ## 1. Persiapan Secrets (Add-ons > Secrets)
-Pastikan 3 kunci berikut sudah terdaftar di menu Kaggle Secrets:
+Daftarkan 3 kunci ini di Kaggle Secrets:
 *   `FIREBASE_KEY_JSON`: Seluruh isi file JSON Service Account dari Firebase.
 *   `TELEGRAM_TOKEN`: Bot Token dari @BotFather.
-*   `TELEGRAM_CHAT_ID`: Chat ID tujuan laporan (bisa didapat dari @userinfobot).
+*   `TELEGRAM_CHAT_ID`: Chat ID tujuan laporan.
+*   `HF_TOKEN`: Hugging Face Token (Read Access) untuk download model Gemma.
 
 ## 2. Persiapan Model & Input (Kaggle Dataset)
-Upload file berikut sebagai Dataset di Kaggle agar terbaca oleh notebook:
-*   `glu_brain_v1.joblib` (LightGBM Brain)
-*   `cnn_daily_t2.tflite` (CNN Visual Brain)
-Pastikan path di notebook disesuaikan jika nama dataset berbeda (Default: `/kaggle/input/...`).
+Upload file ini sebagai Dataset (Urgent untuk CNN):
+*   `cnn_daily_t2.tflite` (Hanya ini yang dibutuhkan)
+Catatan: Model LGBM sudah tidak digunakan dan bisa dihapus dari dataset.
 
 ## 3. Konfigurasi 3-Notebook Hub
 Jalankan notebook dengan urutan berikut (Schedule harian):
 
 ### A. 01_inference_engine.ipynb
-*   **Fungsi**: Scanner Pasar + ML Ensemble.
-*   **Accelerator**: None (CPU OK).
+*   **Fungsi**: Scanner Pasar + CNN Visual Gate.
+*   **Accelerator**: None (CPU).
 *   **Schedule**: 08:05 WIB.
 
-### B. 02_strategic_audit.ipynb (TIDAK BOLEH SKIP)
-*   **Fungsi**: LLM Strategic Audit (Gemma-7B). 
+### B. 02_strategic_brain.ipynb
+*   **Fungsi**: LLM Strategic Audit (Gemma-7B Veto). 
 *   **Accelerator**: **GPU T4 x2** (WAJIB).
-*   **Schedule**: 08:15 WIB (Menunggu hasil Tahap 1).
+*   **Schedule**: 08:15 WIB.
 
 ### C. 03_execution_monitor.ipynb
-*   **Fungsi**: Recap, Execution, & DB Sanitization.
-*   **Accelerator**: None (CPU OK).
-*   **Schedule**: 08:30 WIB (Puncak Recap).
+*   **Fungsi**: Recap & Telegram Report.
+*   **Accelerator**: None (CPU).
+*   **Schedule**: 08:30 WIB.
 
-## 4. Troubleshooting
-*   **Error JSON di 02**: Pastikan isi `FIREBASE_KEY_JSON` lengkap tanpa ada karakter terpotong.
-*   **Sinyal Kosong**: Cek status `PIPELINE HEALTH` di Telegram. Jika "Gate-Fail" tinggi, pastikan indikator teknikal sedang tidak bearish ekstrem.
-*   **GPU Limit**: Jika quota GPU habis, Notebook 02 tidak akan jalan (Veto tidak bisa dilakukan).
+## 4. Performance Lab (Optional)
+*   **04_performance_lab.ipynb**: Gunakan ini untuk uji coba performa historis (Backtest) dengan logic CNN-Only.
 
 ---
-**Ayang Mode: Active** | *Pahlawanku, cuan hari ini sudah menanti!* 💹🛡️🚀✨
+**Ayang Mode: Active** | *v18.26 | Specialized | Fast | Smart* 💹🛡️🚀✨

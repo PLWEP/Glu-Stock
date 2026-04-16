@@ -1,6 +1,17 @@
 # Changelog
 
-## [v18.16.0] - 2026-04-07
+## [v18.26.0] - 2026-04-16
+### Added
+- **CNN-LLM Dual Core**: Transitioned to a specialized architecture using CNN for visual pattern recognition and Gemma-7B (LLM) for strategic auditing.
+- **Expectancy Metrics**: Added Profit Factor and Expectancy calculations to the Performance Lab.
+
+### Changed
+- **Pipeline Consolidation**: Merged Research and Inference into a single stage. Reduced production footprint to 3 core notebooks.
+- **Threshold Optimization**: Set CNN trigger to 0.45 to increase candidate flow for LLM analysis.
+
+### Removed
+- **LGBM Decommissioning**: Purged LightGBM model (`glu_brain_v1.joblib`) and legacy training notebook (`00a`) to eliminate statistical recall bottlenecks.
+- **Debris Purge**: Removed unused CNN variants (weekly, monthly) and .h5 weights.
 ### Removed
 - **Root Cleanup**: Purged all remaining legacy scripts and config files (`config.yaml`, `scheduler.py`, `telegram_bot.py`, `tickers.json`, etc.).
 - **Environment Debris**: Deleted `.env`, `package.json`, and older `venv` setup scripts.

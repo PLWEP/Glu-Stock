@@ -1,38 +1,30 @@
 # Glu-Stock 💹
 
-Kaggle-native quantitative trading framework for IDX (Indonesia Stock Exchange). Features an institutional-grade ML pipeline, recursive model discovery, and an autonomous self-sequencing execution engine.
+Kaggle-native quantitative trading framework for IDX (Indonesia Stock Exchange). Features an institutional-grade CNN-LLM Dual Core pipeline for strategic signal generation.
 
-## 🧠 ML Intelligence (v18.1)
+## 🧠 Dual-Core Intelligence (v18.26)
 
-Dual-model ensemble for high-precision signal generation:
+The engine leverages a specialized two-stage intelligence flow:
 
-- **LightGBM Brain**: Tabular Alpha (**63% OOS**) with 12-feature engineering (Fractional Differentiation, Time-Based). 
-- **CNN Brain**: Lightweight Conv1D (**62% OOS**) for 30-day OHLCV pattern recognition.
-- **Meta-Label Gate**: Signals execute ONLY when LightGBM says "BUY" AND CNN confidence hits threshold.
-- **Market Regime Guard**: Automatically tightens Meta-Gate to **70%** during **BEAR** markets (IHSG < SMA200).
+1.  **CNN Visual Brain**: Lightweight Conv1D TFLite model for 30-day OHLCV pattern recognition. Acts as the primary technical gatekeeper.
+2.  **LLM Strategic Brain**: 4-bit quantized **Gemma-7B** (Google) acting as the high-hierarchy Supreme Auditor. It performs qualitative reasoning on market narratives with full **VETO** power.
 
-## 🚀 Institutional Features (v18.1 Hardening)
+## 🚀 Institutional Features
 
-- **Recursive Discovery**: Automagically finds model files (`.joblib`, `.tflite`) in deeply nested Kaggle input paths.
-- **Self-Sequencing (Wait & Retry)**: Downstream notebooks wait up to 20 mins for predecessors to complete, resolving Kaggle's simultaneous scheduling race conditions.
-- **Risk Manager (v18.1)**: 
-    - **ATR-Based Sizing**: Positions sized based on 1% Equity Risk and actual market volatility.
-    - **The Closer**: Automated monitoring and closure of trades hitting Stop-Loss or Take-Profit.
-- **No-Emoji UI**: Standardized plain-text markers for 100% character encoding compatibility in automated logs.
+- **High-Hierarchy Audit**: No trade is executed without strategic confirmation from the LLM Brain.
+- **Unified 3-Notebook Hub**: Optimized for Kaggle's 5-notebook scheduling limit.
+- **ATR-Based Risk Management**: Automated position sizing and Triple Barrier exits (TP 3% / SL 2%).
+- **Firebase Global State**: Cross-notebook signaling and real-time execution monitoring.
 
-## 🛰️ Project Structure (v18.x)
+## 🛰️ Project Structure (v18.26)
 
-The engine is now fully self-contained across 5 monolithic notebooks designed for Kaggle deployment:
+1.  **`01_inference_engine.ipynb`**: Universe Scan (SMA 50) + CNN Visual Inference.
+2.  **`02_strategic_brain.ipynb`**: High-hierarchy LLM Strategic Audit.
+3.  **`03_execution_monitor.ipynb`**: Trade execution, risk management, and Telegram reporting.
+4.  **`04_performance_lab.ipynb`**: Historical backtesting and performance auditing.
 
-1.  **`00a_model_retraining_rf.ipynb`**: Weekly LightGBM retraining.
-2.  **`00b_model_retraining_cnn.ipynb`**: Weekly CNN retraining.
-3.  **`01_research_scan.ipynb`**: Daily universe selection & ranking.
-4.  **`02_signal_inference.ipynb`**: Daily dual-brain Meta-Gate inference.
-5.  **`03_execution_monitor.ipynb`**: Daily trade execution, risk management, and 08:30 WIB recap.
-
-**Core Assets**:
-*   `data/models/`: Production-ready model artifacts.
-*   `Firebase`: Global state management and cross-notebook signaling.
+**Model Retraining**:
+*   `00b_model_retraining_cnn.ipynb`: Weekly CNN visual logic training.
 
 ---
-*Institutional Grade | ML Powered | Cloud Native | v18.16*
+*Institutional Grade | CNN-LLM Dual Core | v18.26*
