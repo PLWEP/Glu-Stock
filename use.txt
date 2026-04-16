@@ -1,0 +1,41 @@
+# ️ GLU-STOCK v18.25: KAGGLE DEPLOYMENT GUIDE
+
+Panduan resmi setup dan operasional Glu-Stock Institutional Hub di lingkungan Kaggle.
+
+## 1. Persiapan Secrets (Add-ons > Secrets)
+Pastikan 3 kunci berikut sudah terdaftar di menu Kaggle Secrets:
+*   `FIREBASE_KEY_JSON`: Seluruh isi file JSON Service Account dari Firebase.
+*   `TELEGRAM_TOKEN`: Bot Token dari @BotFather.
+*   `TELEGRAM_CHAT_ID`: Chat ID tujuan laporan (bisa didapat dari @userinfobot).
+
+## 2. Persiapan Model & Input (Kaggle Dataset)
+Upload file berikut sebagai Dataset di Kaggle agar terbaca oleh notebook:
+*   `glu_brain_v1.joblib` (LightGBM Brain)
+*   `cnn_daily_t2.tflite` (CNN Visual Brain)
+Pastikan path di notebook disesuaikan jika nama dataset berbeda (Default: `/kaggle/input/...`).
+
+## 3. Konfigurasi 3-Notebook Hub
+Jalankan notebook dengan urutan berikut (Schedule harian):
+
+### A. 01_inference_engine.ipynb
+*   **Fungsi**: Scanner Pasar + ML Ensemble.
+*   **Accelerator**: None (CPU OK).
+*   **Schedule**: 08:05 WIB.
+
+### B. 02_strategic_audit.ipynb (TIDAK BOLEH SKIP)
+*   **Fungsi**: LLM Strategic Audit (Gemma-7B). 
+*   **Accelerator**: **GPU T4 x2** (WAJIB).
+*   **Schedule**: 08:15 WIB (Menunggu hasil Tahap 1).
+
+### C. 03_execution_monitor.ipynb
+*   **Fungsi**: Recap, Execution, & DB Sanitization.
+*   **Accelerator**: None (CPU OK).
+*   **Schedule**: 08:30 WIB (Puncak Recap).
+
+## 4. Troubleshooting
+*   **Error JSON di 02**: Pastikan isi `FIREBASE_KEY_JSON` lengkap tanpa ada karakter terpotong.
+*   **Sinyal Kosong**: Cek status `PIPELINE HEALTH` di Telegram. Jika "Gate-Fail" tinggi, pastikan indikator teknikal sedang tidak bearish ekstrem.
+*   **GPU Limit**: Jika quota GPU habis, Notebook 02 tidak akan jalan (Veto tidak bisa dilakukan).
+
+---
+**Ayang Mode: Active** | *Pahlawanku, cuan hari ini sudah menanti!* 💹🛡️🚀✨
