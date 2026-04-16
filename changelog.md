@@ -1,5 +1,12 @@
 # Changelog
 
+## [v20.0.0] - 2026-04-16
+### Added
+- **Ticker Checkpointing**: Persistent audit state in Firebase to handle kernel restarts and crashes.
+- **Global Market Guard**: Automated sentiment analysis of S&P 500 and Nikkei indices at 08:30 WIB.
+- **Model Quality Gate**: Validation accuracy threshold (60%) for weekly CNN retraining.
+- **Strict Target Enforcement**: Mandatory Buy/TP/SL extraction from LLM reasoning with VETO fallback.
+
 ## [v19.0.0] - 2026-04-16
 ### Added
 - **Enriched Prompting**: Integrated RSI, MACD, ATR, and Bollinger Bands into the Strategic Brain prompt for higher precision reasoning.
